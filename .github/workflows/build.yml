@@ -1,0 +1,576 @@
+name: Build Aviator Predictor
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android SDK
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Create Android project
+        run: |
+
+          mkdir -p app/src/main/java/com/aviatorpredictor/app
+          mkdir -p app/src/main/res/values
+
+          cat > gradle.properties <<'EOF'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          android.suppressUnsupportedCompileSdk=36
+          EOF
+
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          rootProject.name = "AviatorPredictor"
+          include ':app'
+          EOF
+
+          cat > build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.7.3' apply false
+              id 'org.jetbrains.kotlin.android' version '2.0.21' apply false
+          }
+          EOF
+
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+              id 'org.jetbrains.kotlin.android'
+          }
+
+          android {
+              namespace 'com.aviatorpredictor.app'
+              compileSdk 36
+
+              defaultConfig {
+                  applicationId 'com.aviatorpredictor.app'
+                  minSdk 24
+                  targetSdk 36
+                  versionCode 1
+                  versionName "1.0"
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+
+              kotlinOptions {
+                  jvmTarget = '17'
+              }
+          }
+
+          dependencies {
+              implementation 'androidx.core:core-ktx:1.15.0'
+              implementation 'androidx.appcompat:appcompat:1.7.0'
+              implementation 'com.google.android.material:material:1.12.0'
+          }
+          EOF
+
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+              <application
+                  android:theme="@style/AppTheme"
+                  android:label="Aviator Predictor"
+                  android:allowBackup="true"
+                  android:supportsRtl="true">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+
+                  </activity>
+
+              </application>
+
+          </manifest>
+          EOF
+
+          cat > app/src/main/res/values/styles.xml <<'EOF'
+          <resources>
+
+              <style name="AppTheme"
+                  parent="Theme.MaterialComponents.DayNight.NoActionBar">
+
+                  <item name="android:fontFamily">sans</item>
+                  <item name="android:statusBarColor">#050505</item>
+                  <item name="android:navigationBarColor">#050505</item>
+
+              </style>
+
+          </resources>
+          EOF
+
+          cat > app/src/main/java/com/aviatorpredictor/app/MainActivity.kt <<'EOF'
+          package com.aviatorpredictor.app
+
+          import android.graphics.Color
+          import android.os.Bundle
+          import android.view.Gravity
+          import android.view.View
+          import android.view.ViewGroup
+          import android.widget.Button
+          import android.widget.EditText
+          import android.widget.LinearLayout
+          import android.widget.ScrollView
+          import android.widget.TextView
+          import androidx.appcompat.app.AppCompatActivity
+          import kotlin.math.min
+          import kotlin.random.Random
+
+          class MainActivity : AppCompatActivity() {
+
+              private lateinit var predictionText: TextView
+              private lateinit var confidenceText: TextView
+              private lateinit var signalText: TextView
+              private lateinit var historyText: TextView
+              private lateinit var roundsInput: EditText
+
+              private val history = mutableListOf<Double>()
+
+              private fun text(
+                  value: String,
+                  size: Float,
+                  bold: Boolean = false
+              ): TextView {
+
+                  return TextView(this).apply {
+
+                      text = value
+                      textSize = size
+                      setTextColor(Color.WHITE)
+                      setPadding(20, 14, 20, 14)
+
+                      if (bold) {
+                          setTypeface(
+                              null,
+                              android.graphics.Typeface.BOLD
+                          )
+                      }
+                  }
+              }
+
+              private fun card(
+                  content: View
+              ): LinearLayout {
+
+                  return LinearLayout(this).apply {
+
+                      orientation = LinearLayout.VERTICAL
+                      setPadding(16, 16, 16, 16)
+                      setBackgroundColor(
+                          Color.rgb(25, 25, 25)
+                      )
+
+                      addView(
+                          content,
+                          LinearLayout.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT,
+                              ViewGroup.LayoutParams.WRAP_CONTENT
+                          )
+                      )
+                  }
+              }
+
+              private fun generatePrediction() {
+
+                  val randomValue =
+                      Random.nextDouble(1.05, 8.00)
+
+                  val confidence =
+                      Random.nextInt(55, 91)
+
+                  val signal = when {
+                      randomValue < 1.50 ->
+                          "LOW"
+
+                      randomValue < 3.00 ->
+                          "MEDIUM"
+
+                      else ->
+                          "HIGH"
+                  }
+
+                  predictionText.text =
+                      String.format(
+                          "%.2fx",
+                          randomValue
+                      )
+
+                  confidenceText.text =
+                      "Estimated confidence: $confidence%"
+
+                  signalText.text =
+                      "Signal: $signal"
+
+                  history.add(randomValue)
+
+                  if (history.size > 8) {
+                      history.removeAt(0)
+                  }
+
+                  historyText.text =
+                      history
+                          .reversed()
+                          .joinToString("\n") {
+                              String.format(
+                                  "Round estimate: %.2fx",
+                                  it
+                              )
+                          }
+              }
+
+              private fun analyzeRounds() {
+
+                  val input =
+                      roundsInput.text.toString().trim()
+
+                  if (input.isEmpty()) {
+                      return
+                  }
+
+                  val values =
+                      input
+                          .split(",", " ", "\n")
+                          .mapNotNull {
+                              it.toDoubleOrNull()
+                          }
+
+                  if (values.isEmpty()) {
+                      return
+                  }
+
+                  val average =
+                      values.average()
+
+                  val recent =
+                      values.takeLast(
+                          min(5, values.size)
+                      )
+
+                  val recentAverage =
+                      recent.average()
+
+                  val estimated =
+                      when {
+                          recentAverage < 1.50 ->
+                              1.60
+
+                          recentAverage < 2.00 ->
+                              2.10
+
+                          recentAverage < 3.00 ->
+                              2.70
+
+                          else ->
+                              3.20
+                      }
+
+                  predictionText.text =
+                      String.format(
+                          "%.2fx",
+                          estimated
+                      )
+
+                  confidenceText.text =
+                      String.format(
+                          "Average entered: %.2fx",
+                          average
+                      )
+
+                  signalText.text =
+                      when {
+                          estimated < 1.80 ->
+                              "Signal: LOW"
+
+                          estimated < 3.00 ->
+                              "Signal: MEDIUM"
+
+                          else ->
+                              "Signal: HIGH"
+                      }
+              }
+
+              override fun onCreate(
+                  savedInstanceState: Bundle?
+              ) {
+
+                  super.onCreate(savedInstanceState)
+
+                  val scroll =
+                      ScrollView(this)
+
+                  val root =
+                      LinearLayout(this).apply {
+
+                          orientation =
+                              LinearLayout.VERTICAL
+
+                          setPadding(
+                              20,
+                              20,
+                              20,
+                              30
+                          )
+
+                          setBackgroundColor(
+                              Color.rgb(8, 8, 8)
+                          )
+                      }
+
+                  root.addView(
+                      text(
+                          "✈️ AVIATOR",
+                          30f,
+                          true
+                      )
+                  )
+
+                  root.addView(
+                      text(
+                          "PREDICTOR",
+                          24f,
+                          true
+                      )
+                  )
+
+                  root.addView(
+                      text(
+                          "Experimental round analysis",
+                          15f
+                      )
+                  )
+
+                  predictionText =
+                      text(
+                          "2.00x",
+                          52f,
+                          true
+                      ).apply {
+
+                          gravity =
+                              Gravity.CENTER
+                      }
+
+                  root.addView(
+                      card(predictionText),
+                      LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          150
+                      ).apply {
+                          setMargins(0, 20, 0, 10)
+                      }
+                  )
+
+                  confidenceText =
+                      text(
+                          "Estimated confidence: --",
+                          17f,
+                          true
+                      )
+
+                  root.addView(
+                      card(confidenceText)
+                  )
+
+                  signalText =
+                      text(
+                          "Signal: READY",
+                          19f,
+                          true
+                      )
+
+                  root.addView(
+                      card(signalText),
+                      LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          ViewGroup.LayoutParams.WRAP_CONTENT
+                      ).apply {
+                          setMargins(0, 10, 0, 10)
+                      }
+                  )
+
+                  val predictButton =
+                      Button(this).apply {
+
+                          text =
+                              "🎯 GENERATE ESTIMATE"
+
+                          setOnClickListener {
+                              generatePrediction()
+                          }
+                      }
+
+                  root.addView(
+                      predictButton,
+                      LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          ViewGroup.LayoutParams.WRAP_CONTENT
+                      )
+                  )
+
+                  root.addView(
+                      text(
+                          "Enter previous multipliers",
+                          18f,
+                          true
+                      )
+                  )
+
+                  roundsInput =
+                      EditText(this).apply {
+
+                          hint =
+                              "Example: 1.12, 1.45, 2.10, 3.50"
+
+                          setTextColor(Color.WHITE)
+                          setHintTextColor(
+                              Color.GRAY
+                          )
+
+                          setSingleLine(false)
+                          setPadding(
+                              20,
+                              20,
+                              20,
+                              20
+                          )
+                      }
+
+                  root.addView(
+                      roundsInput,
+                      LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          130
+                      )
+                  )
+
+                  val analyzeButton =
+                      Button(this).apply {
+
+                          text =
+                              "📊 ANALYZE HISTORY"
+
+                          setOnClickListener {
+                              analyzeRounds()
+                          }
+                      }
+
+                  root.addView(
+                      analyzeButton
+                  )
+
+                  root.addView(
+                      text(
+                          "RECENT ESTIMATES",
+                          17f,
+                          true
+                      )
+                  )
+
+                  historyText =
+                      text(
+                          "No estimates yet.",
+                          15f
+                      )
+
+                  root.addView(
+                      historyText
+                  )
+
+                  root.addView(
+                      text(
+                          "⚠️ IMPORTANT",
+                          18f,
+                          true
+                      )
+                  )
+
+                  root.addView(
+                      text(
+                          "This app does not have access to the Aviator game's internal system and cannot know the next result. Estimates are experimental and are not guaranteed. Never treat them as guaranteed winning signals.",
+                          14f
+                      )
+                  )
+
+                  root.addView(
+                      text(
+                          "\nAviator Predictor v1.0",
+                          13f
+                      )
+                  )
+
+                  scroll.addView(root)
+
+                  setContentView(scroll)
+              }
+          }
+          EOF
+
+      - name: Download Gradle
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip
+          unzip -q gradle-8.9-bin.zip
+
+      - name: Create Gradle wrapper
+        run: |
+          ./gradle-8.9/bin/gradle wrapper --gradle-version 8.9
+
+      - name: Build APK
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Aviator-Predictor-APK
+          path: app/build/outputs/**/*.apk
+          if-no-files-found: error
+          retention-days: 7
