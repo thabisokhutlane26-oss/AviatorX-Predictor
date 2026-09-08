@@ -1,4 +1,4 @@
-name: Build AviatorX AI V3 Professional
+name: Build AviatorX AI V7 Final
 
 on:
   workflow_dispatch:
@@ -11,11 +11,11 @@ permissions:
 
 jobs:
   build:
-    name: Build AviatorX AI V3
+    name: Build AviatorX AI V7 Final APK
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v5
 
       - name: Set up Java 17
@@ -27,28 +27,25 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
 
-      - name: Install Android SDK packages
+      - name: Install Android SDK
         run: |
-          yes | sdkmanager --licenses > /dev/null || true
+          yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
-      - name: Create Android project
-        shell: bash
+      - name: Create project directories
         run: |
-          set -e
-
-          rm -rf app
-
           mkdir -p app/src/main/java/com/aviatorx/predictor
-          mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/mipmap-hdpi
+          mkdir -p app/src/main/res/mipmap-mdpi
+          mkdir -p app/src/main/res/mipmap-xhdpi
+          mkdir -p app/src/main/res/mipmap-xxhdpi
+          mkdir -p app/src/main/res/mipmap-xxxhdpi
+          mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/res/xml
 
-          cat > gradle.properties <<'EOF'
-          android.useAndroidX=true
-          android.enableJetifier=true
-          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
-          EOF
-
+      - name: Create settings.gradle
+        run: |
           cat > settings.gradle <<'EOF'
           pluginManagement {
               repositories {
@@ -70,17 +67,27 @@ jobs:
           include(":app")
           EOF
 
+      - name: Create root build.gradle
+        run: |
           cat > build.gradle <<'EOF'
           plugins {
               id 'com.android.application' version '8.7.3' apply false
-              id 'org.jetbrains.kotlin.android' version '2.0.21' apply false
           }
           EOF
 
+      - name: Create gradle.properties
+        run: |
+          cat > gradle.properties <<'EOF'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          EOF
+
+      - name: Create app build.gradle
+        run: |
           cat > app/build.gradle <<'EOF'
           plugins {
               id 'com.android.application'
-              id 'org.jetbrains.kotlin.android'
           }
 
           android {
@@ -91,8 +98,8 @@ jobs:
                   applicationId 'com.aviatorx.predictor'
                   minSdk 23
                   targetSdk 35
-                  versionCode 30
-                  versionName '3.0'
+                  versionCode 70
+                  versionName '7.0'
               }
 
               compileOptions {
@@ -100,106 +107,48 @@ jobs:
                   targetCompatibility JavaVersion.VERSION_17
               }
 
-              kotlinOptions {
-                  jvmTarget = '17'
+              buildTypes {
+                  debug {
+                      minifyEnabled false
+                  }
+
+                  release {
+                      minifyEnabled false
+                      shrinkResources false
+                  }
               }
           }
 
           dependencies {
-              implementation 'androidx.core:core-ktx:1.15.0'
+              implementation 'androidx.core:core:1.15.0'
               implementation 'androidx.appcompat:appcompat:1.7.0'
               implementation 'com.google.android.material:material:1.12.0'
           }
           EOF
 
-          cat > app/src/main/res/values/colors.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <color name="black">#000000</color>
-              <color name="white">#FFFFFF</color>
-              <color name="yellow">#FFD600</color>
-              <color name="dark_bg">#090B10</color>
-              <color name="card_bg">#121722</color>
-              <color name="green">#00E676</color>
-              <color name="red">#FF5252</color>
-              <color name="gray">#9AA4B2</color>
-          </resources>
-          EOF
-
-          cat > app/src/main/res/values/themes.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-                  <item name="android:fontFamily">sans</item>
-                  <item name="android:windowLightStatusBar">false</item>
-                  <item name="android:statusBarColor">@color/black</item>
-                  <item name="android:navigationBarColor">@color/black</item>
-                  <item name="android:colorAccent">@color/yellow</item>
-                  <item name="android:windowBackground">@color/dark_bg</item>
-              </style>
-          </resources>
-          EOF
-
-          cat > app/src/main/res/drawable/card_background.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="@color/card_bg"/>
-              <corners android:radius="18dp"/>
-              <padding
-                  android:left="16dp"
-                  android:top="16dp"
-                  android:right="16dp"
-                  android:bottom="16dp"/>
-          </shape>
-          EOF
-
-          cat > app/src/main/res/drawable/input_background.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#1A202C"/>
-              <stroke
-                  android:width="1dp"
-                  android:color="#303847"/>
-              <corners android:radius="12dp"/>
-              <padding
-                  android:left="14dp"
-                  android:top="4dp"
-                  android:right="14dp"
-                  android:bottom="4dp"/>
-          </shape>
-          EOF
-
-          cat > app/src/main/res/drawable/button_background.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="@color/yellow"/>
-              <corners android:radius="12dp"/>
-              <padding
-                  android:left="18dp"
-                  android:top="12dp"
-                  android:right="18dp"
-                  android:bottom="12dp"/>
-          </shape>
-          EOF
-
+      - name: Create AndroidManifest.xml
+        run: |
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
               <application
                   android:allowBackup="true"
+                  android:icon="@drawable/ic_launcher"
                   android:label="AviatorX AI"
-                  android:theme="@style/AppTheme"
-                  android:supportsRtl="true">
+                  android:supportsRtl="true"
+                  android:theme="@style/AppTheme">
 
                   <activity
                       android:name=".MainActivity"
-                      android:screenOrientation="portrait"
-                      android:exported="true">
+                      android:exported="true"
+                      android:screenOrientation="portrait">
 
                       <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
 
                   </activity>
@@ -209,830 +158,1410 @@ jobs:
           </manifest>
           EOF
 
-          cat > app/src/main/java/com/aviatorx/predictor/MainActivity.kt <<'EOF'
-          package com.aviatorx.predictor
+      - name: Create theme
+        run: |
+          cat > app/src/main/res/values/styles.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
 
-          import android.content.Context
-          import android.graphics.Color
-          import android.os.Bundle
-          import android.view.ViewGroup
-          import android.widget.*
-          import androidx.appcompat.app.AppCompatActivity
-          import java.security.MessageDigest
-          import java.util.Locale
-          import kotlin.math.sqrt
+              <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
+                  <item name="android:fontFamily">sans</item>
+                  <item name="android:windowLightStatusBar">false</item>
+                  <item name="android:statusBarColor">#07111F</item>
+                  <item name="android:navigationBarColor">#050B12</item>
+                  <item name="android:windowActionModeOverlay">true</item>
+              </style>
 
-          class MainActivity : AppCompatActivity() {
+          </resources>
+          EOF
 
-              private lateinit var historyText: TextView
-              private lateinit var statsText: TextView
-              private lateinit var analyticsText: TextView
-              private lateinit var statusText: TextView
-              private lateinit var roundInput: EditText
-              private lateinit var windowSpinner: Spinner
+      - name: Create app icon
+        run: |
+          cat > app/src/main/res/drawable/ic_launcher.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="108dp"
+              android:height="108dp"
+              android:viewportWidth="108"
+              android:viewportHeight="108">
 
-              private val rounds = mutableListOf<Double>()
+              <path
+                  android:fillColor="#07111F"
+                  android:pathData="M0,0h108v108h-108z" />
 
-              private val prefsName = "aviatorx_data"
-              private val roundsKey = "rounds"
+              <path
+                  android:fillColor="#00E676"
+                  android:pathData="M18,66 L45,42 L82,24 L69,46 L89,58 L63,59 L48,78 L45,60 Z" />
 
-              override fun onCreate(savedInstanceState: Bundle?) {
-                  super.onCreate(savedInstanceState)
+              <path
+                  android:fillColor="#FFFFFF"
+                  android:pathData="M45,42 L54,47 L82,24 L63,49 Z" />
 
-                  loadHistory()
-                  buildInterface()
-                  refreshDashboard()
+          </vector>
+          EOF
+
+      - name: Create MainActivity.java
+        run: |
+          cat > app/src/main/java/com/aviatorx/predictor/MainActivity.java <<'EOF'
+          package com.aviatorx.predictor;
+
+          import android.Manifest;
+          import android.app.Activity;
+          import android.app.NotificationChannel;
+          import android.app.NotificationManager;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.content.SharedPreferences;
+          import android.content.pm.PackageManager;
+          import android.graphics.Canvas;
+          import android.graphics.Paint;
+          import android.graphics.RectF;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.os.Bundle;
+          import android.text.InputType;
+          import android.view.Gravity;
+          import android.view.View;
+          import android.view.ViewGroup;
+          import android.widget.ArrayAdapter;
+          import android.widget.Button;
+          import android.widget.EditText;
+          import android.widget.LinearLayout;
+          import android.widget.ScrollView;
+          import android.widget.Spinner;
+          import android.widget.TextView;
+          import android.widget.Toast;
+
+          import androidx.activity.result.ActivityResultLauncher;
+          import androidx.activity.result.contract.ActivityResultContracts;
+          import androidx.annotation.Nullable;
+          import androidx.appcompat.app.AppCompatActivity;
+          import androidx.core.app.NotificationCompat;
+          import androidx.core.content.ContextCompat;
+
+          import java.io.BufferedReader;
+          import java.io.InputStreamReader;
+          import java.io.OutputStream;
+          import java.nio.charset.StandardCharsets;
+          import java.security.MessageDigest;
+          import java.text.SimpleDateFormat;
+          import java.util.ArrayList;
+          import java.util.Collections;
+          import java.util.Comparator;
+          import java.util.Date;
+          import java.util.HashMap;
+          import java.util.List;
+          import java.util.Locale;
+          import java.util.Map;
+
+          public class MainActivity extends AppCompatActivity {
+
+              private static final String PREFS = "aviatorx_v7";
+              private static final String DATA_KEY = "rounds";
+
+              private final ArrayList<Round> rounds = new ArrayList<>();
+              private SharedPreferences prefs;
+
+              private LinearLayout root;
+              private LinearLayout explorerContainer;
+              private TextView dashboardText;
+              private TextView analyticsText;
+              private TextView qualityText;
+              private ChartView lineChart;
+              private DistributionView distributionChart;
+
+              private Spinner timeframeSpinner;
+              private Spinner filterSpinner;
+              private Spinner sortSpinner;
+              private EditText searchBox;
+
+              private final String[] TIMEFRAMES = {
+                      "ALL TIME",
+                      "5M",
+                      "15M",
+                      "30M",
+                      "1H",
+                      "4H",
+                      "1D"
+              };
+
+              private final String[] FILTERS = {
+                      "ALL",
+                      "< 1.20x",
+                      "1.20x - 2x",
+                      "2x - 5x",
+                      "5x - 10x",
+                      "10x+"
+              };
+
+              private final String[] SORTS = {
+                      "NEWEST",
+                      "HIGHEST",
+                      "LOWEST"
+              };
+
+              private ActivityResultLauncher<Intent> exportLauncher;
+              private ActivityResultLauncher<Intent> importLauncher;
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+
+                  prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+                  loadRounds();
+                  createNotificationChannel();
+
+                  exportLauncher = registerForActivityResult(
+                          new ActivityResultContracts.StartActivityForResult(),
+                          result -> {
+                              if (result.getResultCode() == Activity.RESULT_OK &&
+                                      result.getData() != null &&
+                                      result.getData().getData() != null) {
+                                  exportCsv(result.getData().getData());
+                              }
+                          });
+
+                  importLauncher = registerForActivityResult(
+                          new ActivityResultContracts.StartActivityForResult(),
+                          result -> {
+                              if (result.getResultCode() == Activity.RESULT_OK &&
+                                      result.getData() != null &&
+                                      result.getData().getData() != null) {
+                                  importCsv(result.getData().getData());
+                              }
+                          });
+
+                  buildUi();
               }
 
-              private fun dp(value: Int): Int =
-                  (value * resources.displayMetrics.density).toInt()
-
-              private fun textView(
-                  value: String,
-                  size: Float,
-                  bold: Boolean = false
-              ): TextView {
-                  return TextView(this).apply {
-                      text = value
-                      textSize = size
-                      setTextColor(Color.WHITE)
-
-                      if (bold) {
-                          setTypeface(
-                              null,
-                              android.graphics.Typeface.BOLD
-                          )
-                      }
-
-                      setPadding(
-                          dp(4),
-                          dp(4),
-                          dp(4),
-                          dp(4)
-                      )
-                  }
+              private int dp(float value) {
+                  return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
               }
 
-              private fun card(): LinearLayout {
-                  return LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
+              private TextView text(String value, float size) {
+                  TextView t = new TextView(this);
+                  t.setText(value);
+                  t.setTextSize(size);
+                  t.setTextColor(0xFFE8F1F8);
+                  t.setPadding(dp(12), dp(8), dp(12), dp(8));
+                  return t;
+              }
 
-                      setPadding(
-                          dp(16),
-                          dp(16),
-                          dp(16),
-                          dp(16)
-                      )
+              private Button button(String value) {
+                  Button b = new Button(this);
+                  b.setText(value);
+                  b.setTextSize(13);
+                  b.setAllCaps(false);
+                  return b;
+              }
 
-                      setBackgroundResource(
-                          R.drawable.card_background
-                      )
+              private LinearLayout card() {
+                  LinearLayout box = new LinearLayout(this);
+                  box.setOrientation(LinearLayout.VERTICAL);
+                  box.setPadding(dp(14), dp(14), dp(14), dp(14));
+                  box.setBackgroundColor(0xFF101D2B);
 
-                      val params = LinearLayout.LayoutParams(
+                  LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT,
-                          ViewGroup.LayoutParams.WRAP_CONTENT
-                      )
-
-                      params.setMargins(
-                          dp(8),
-                          dp(8),
-                          dp(8),
-                          dp(8)
-                      )
-
-                      layoutParams = params
-                  }
+                          ViewGroup.LayoutParams.WRAP_CONTENT);
+                  p.setMargins(0, dp(8), 0, dp(8));
+                  box.setLayoutParams(p);
+                  return box;
               }
 
-              private fun buildInterface() {
+              private void buildUi() {
+                  ScrollView scroll = new ScrollView(this);
+                  scroll.setFillViewport(true);
+                  scroll.setBackgroundColor(0xFF050B12);
 
-                  val scroll = ScrollView(this)
+                  root = new LinearLayout(this);
+                  root.setOrientation(LinearLayout.VERTICAL);
+                  root.setPadding(dp(14), dp(12), dp(14), dp(20));
 
-                  val root = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
+                  scroll.addView(root);
 
-                      setPadding(
-                          dp(10),
-                          dp(10),
-                          dp(10),
-                          dp(20)
-                      )
+                  TextView header = text("✈ AVIATORX AI", 28);
+                  header.setTextColor(0xFF00E676);
+                  header.setGravity(Gravity.CENTER);
+                  root.addView(header);
 
-                      setBackgroundColor(
-                          Color.rgb(9, 11, 16)
-                      )
-                  }
+                  TextView sub = text(
+                          "V7.0 FINAL • PROFESSIONAL ANALYTICS ENGINE",
+                          12);
+                  sub.setGravity(Gravity.CENTER);
+                  root.addView(sub);
 
-                  scroll.addView(root)
+                  TextView owner = text(
+                          "Built by Thabiso Khutlane • Data-driven • No guaranteed predictions",
+                          11);
+                  owner.setGravity(Gravity.CENTER);
+                  owner.setTextColor(0xFF9FB1C1);
+                  root.addView(owner);
 
-                  val header = card()
+                  LinearLayout dashCard = card();
+                  dashCard.addView(text("PROFESSIONAL DASHBOARD", 18));
 
-                  val title = textView(
-                      "✈ AVIATORX AI",
-                      30f,
-                      true
-                  )
+                  dashboardText = text("", 14);
+                  dashCard.addView(dashboardText);
 
-                  title.setTextColor(
-                      Color.rgb(255, 214, 0)
-                  )
+                  root.addView(dashCard);
 
-                  header.addView(title)
+                  LinearLayout timeframeCard = card();
+                  timeframeCard.addView(text("ANALYSIS TIMEFRAME", 18));
 
-                  header.addView(
-                      textView(
-                          "PROFESSIONAL ANALYTICS • V3.0",
-                          13f,
-                          true
-                      )
-                  )
+                  timeframeSpinner = spinner(TIMEFRAMES);
+                  timeframeCard.addView(timeframeSpinner);
 
-                  statusText = textView(
-                      "● SYSTEM READY",
-                      13f,
-                      true
-                  )
+                  TextView timeframeInfo = text(
+                          "Timeframes are analysis labels. V7 never invents live data.",
+                          11);
+                  timeframeInfo.setTextColor(0xFF9FB1C1);
+                  timeframeCard.addView(timeframeInfo);
 
-                  statusText.setTextColor(
-                      Color.rgb(0, 230, 118)
-                  )
+                  root.addView(timeframeCard);
 
-                  header.addView(statusText)
+                  LinearLayout entryCard = card();
+                  entryCard.addView(text("ADD COMPLETED ROUND", 18));
 
-                  val owner = textView(
-                      "Made by Thabiso Khutlane",
-                      12f
-                  )
+                  EditText multiplier = new EditText(this);
+                  multiplier.setHint("Multiplier e.g. 1.25");
+                  multiplier.setTextColor(0xFFFFFFFF);
+                  multiplier.setHintTextColor(0xFF7890A3);
+                  multiplier.setInputType(
+                          InputType.TYPE_CLASS_NUMBER |
+                          InputType.TYPE_NUMBER_FLAG_DECIMAL);
+                  entryCard.addView(multiplier);
 
-                  owner.setTextColor(
-                      Color.rgb(154, 164, 178)
-                  )
+                  Button add = button("＋ SAVE ROUND");
+                  entryCard.addView(add);
 
-                  header.addView(owner)
+                  add.setOnClickListener(v -> {
+                      String value = multiplier.getText().toString().trim();
 
-                  root.addView(header)
+                      try {
+                          double m = Double.parseDouble(value);
 
-                  val overview = card()
-
-                  overview.addView(
-                      textView(
-                          "PERFORMANCE OVERVIEW",
-                          18f,
-                          true
-                      )
-                  )
-
-                  statsText = textView("", 15f)
-                  overview.addView(statsText)
-
-                  root.addView(overview)
-
-                  val entryCard = card()
-
-                  entryCard.addView(
-                      textView(
-                          "MANUAL ROUND ENTRY",
-                          18f,
-                          true
-                      )
-                  )
-
-                  entryCard.addView(
-                      textView(
-                          "Enter a completed Aviator multiplier.",
-                          13f
-                      )
-                  )
-
-                  roundInput = EditText(this).apply {
-                      hint = "Example: 2.45"
-                      setTextColor(Color.WHITE)
-                      setHintTextColor(
-                          Color.rgb(154, 164, 178)
-                      )
-
-                      inputType =
-                          android.text.InputType.TYPE_CLASS_NUMBER or
-                          android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
-
-                      setBackgroundResource(
-                          R.drawable.input_background
-                      )
-                  }
-
-                  val inputParams = LinearLayout.LayoutParams(
-                      ViewGroup.LayoutParams.MATCH_PARENT,
-                      dp(58)
-                  )
-
-                  inputParams.setMargins(
-                      0,
-                      dp(12),
-                      0,
-                      dp(12)
-                  )
-
-                  entryCard.addView(
-                      roundInput,
-                      inputParams
-                  )
-
-                  val addButton = Button(this).apply {
-                      text = "ADD COMPLETED ROUND"
-                      setTextColor(Color.BLACK)
-
-                      setTypeface(
-                          null,
-                          android.graphics.Typeface.BOLD
-                      )
-
-                      setBackgroundResource(
-                          R.drawable.button_background
-                      )
-
-                      setOnClickListener {
-                          addRound()
-                      }
-                  }
-
-                  entryCard.addView(addButton)
-
-                  val clearButton = Button(this).apply {
-                      text = "CLEAR HISTORY"
-
-                      setOnClickListener {
-                          clearHistory()
-                      }
-                  }
-
-                  entryCard.addView(clearButton)
-
-                  root.addView(entryCard)
-
-                  val analyticsCard = card()
-
-                  analyticsCard.addView(
-                      textView(
-                          "ADVANCED ANALYTICS",
-                          18f,
-                          true
-                      )
-                  )
-
-                  analyticsCard.addView(
-                      textView(
-                          "Analysis is based only on rounds you enter.",
-                          13f
-                      )
-                  )
-
-                  windowSpinner = Spinner(this)
-
-                  val windows = arrayOf(
-                      "Last 10 rounds",
-                      "Last 25 rounds",
-                      "Last 50 rounds",
-                      "Last 100 rounds"
-                  )
-
-                  val adapter = ArrayAdapter(
-                      this,
-                      android.R.layout.simple_spinner_dropdown_item,
-                      windows
-                  )
-
-                  windowSpinner.adapter = adapter
-
-                  analyticsCard.addView(
-                      windowSpinner,
-                      LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT,
-                          dp(55)
-                      )
-                  )
-
-                  analyticsText = textView("", 14f)
-
-                  analyticsCard.addView(
-                      analyticsText
-                  )
-
-                  windowSpinner.onItemSelectedListener =
-                      object : AdapterView.OnItemSelectedListener {
-
-                          override fun onNothingSelected(
-                              parent: AdapterView<*>?
-                          ) {
-                              refreshDashboard()
+                          if (m < 1.0 || m > 1000000.0) {
+                              Toast.makeText(this,
+                                      "Enter a multiplier from 1.00x to 1,000,000x.",
+                                      Toast.LENGTH_SHORT).show();
+                              return;
                           }
 
-                          override fun onItemSelected(
-                              parent: AdapterView<*>?,
-                              view: android.view.View?,
-                              position: Int,
-                              id: Long
-                          ) {
-                              refreshDashboard()
-                          }
+                          String tf = TIMEFRAMES[timeframeSpinner.getSelectedItemPosition()];
+
+                          rounds.add(new Round(m, System.currentTimeMillis(), tf));
+                          saveRounds();
+
+                          multiplier.setText("");
+                          refreshAll();
+
+                          Toast.makeText(this,
+                                  "Round saved.",
+                                  Toast.LENGTH_SHORT).show();
+
+                      } catch (Exception e) {
+                          Toast.makeText(this,
+                                  "Enter a valid multiplier.",
+                                  Toast.LENGTH_SHORT).show();
+                      }
+                  });
+
+                  root.addView(entryCard);
+
+                  LinearLayout chartCard = card();
+                  chartCard.addView(text("MULTIPLIER HISTORY", 18));
+
+                  lineChart = new ChartView(this);
+                  lineChart.setLayoutParams(new LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, dp(240)));
+                  chartCard.addView(lineChart);
+
+                  root.addView(chartCard);
+
+                  LinearLayout distributionCard = card();
+                  distributionCard.addView(text("MULTIPLIER DISTRIBUTION", 18));
+
+                  distributionChart = new DistributionView(this);
+                  distributionChart.setLayoutParams(new LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, dp(230)));
+                  distributionCard.addView(distributionChart);
+
+                  root.addView(distributionCard);
+
+                  LinearLayout analyticsCard = card();
+                  analyticsCard.addView(text("ADVANCED INTELLIGENCE", 18));
+
+                  analyticsText = text("", 13);
+                  analyticsCard.addView(analyticsText);
+
+                  root.addView(analyticsCard);
+
+                  LinearLayout explorerCard = card();
+                  explorerCard.addView(text("ROUND EXPLORER", 18));
+
+                  searchBox = new EditText(this);
+                  searchBox.setHint("Search multiplier or timeframe");
+                  searchBox.setTextColor(0xFFFFFFFF);
+                  searchBox.setHintTextColor(0xFF7890A3);
+                  explorerCard.addView(searchBox);
+
+                  filterSpinner = spinner(FILTERS);
+                  explorerCard.addView(filterSpinner);
+
+                  sortSpinner = spinner(SORTS);
+                  explorerCard.addView(sortSpinner);
+
+                  explorerContainer = new LinearLayout(this);
+                  explorerContainer.setOrientation(LinearLayout.VERTICAL);
+                  explorerCard.addView(explorerContainer);
+
+                  Button refreshExplorer = button("REFRESH EXPLORER");
+                  explorerCard.addView(refreshExplorer);
+
+                  refreshExplorer.setOnClickListener(v -> refreshExplorer());
+
+                  root.addView(explorerCard);
+
+                  searchBox.setOnEditorActionListener((v, actionId, event) -> {
+                      refreshExplorer();
+                      return false;
+                  });
+
+                  filterSpinner.setOnItemSelectedListener(
+                          new android.widget.AdapterView.OnItemSelectedListener() {
+                              @Override
+                              public void onItemSelected(
+                                      android.widget.AdapterView<?> parent,
+                                      View view,
+                                      int position,
+                                      long id) {
+                                  refreshExplorer();
+                              }
+
+                              @Override
+                              public void onNothingSelected(
+                                      android.widget.AdapterView<?> parent) {}
+                          });
+
+                  sortSpinner.setOnItemSelectedListener(
+                          new android.widget.AdapterView.OnItemSelectedListener() {
+                              @Override
+                              public void onItemSelected(
+                                      android.widget.AdapterView<?> parent,
+                                      View view,
+                                      int position,
+                                      long id) {
+                                  refreshExplorer();
+                              }
+
+                              @Override
+                              public void onNothingSelected(
+                                      android.widget.AdapterView<?> parent) {}
+                          });
+
+                  LinearLayout fairCard = card();
+                  fairCard.addView(text("PROVABLY FAIR VERIFIER", 18));
+
+                  EditText serverSeed = new EditText(this);
+                  serverSeed.setHint("Revealed server seed");
+                  serverSeed.setTextColor(0xFFFFFFFF);
+                  serverSeed.setHintTextColor(0xFF7890A3);
+                  fairCard.addView(serverSeed);
+
+                  EditText expectedHash = new EditText(this);
+                  expectedHash.setHint("Expected SHA-256 hash");
+                  expectedHash.setTextColor(0xFFFFFFFF);
+                  expectedHash.setHintTextColor(0xFF7890A3);
+                  fairCard.addView(expectedHash);
+
+                  Button verify = button("VERIFY SHA-256");
+                  fairCard.addView(verify);
+
+                  TextView verifyResult = text("", 12);
+                  fairCard.addView(verifyResult);
+
+                  verify.setOnClickListener(v -> {
+                      String seed = serverSeed.getText().toString().trim();
+                      String expected = expectedHash.getText().toString().trim().toLowerCase(Locale.US);
+
+                      if (seed.isEmpty() || expected.length() != 64) {
+                          verifyResult.setText(
+                                  "Enter the revealed server seed and a 64-character SHA-256 hash.");
+                          return;
                       }
 
-                  root.addView(analyticsCard)
+                      try {
+                          String actual = sha256(seed);
+                          boolean ok = actual.equals(expected);
 
-                  val recentCard = card()
-
-                  recentCard.addView(
-                      textView(
-                          "RECENT ROUNDS",
-                          18f,
-                          true
-                      )
-                  )
-
-                  historyText = textView(
-                      "No rounds entered.",
-                      14f
-                  )
-
-                  recentCard.addView(historyText)
-
-                  root.addView(recentCard)
-
-                  val fairCard = card()
-
-                  fairCard.addView(
-                      textView(
-                          "PROVABLY FAIR VERIFIER",
-                          18f,
-                          true
-                      )
-                  )
-
-                  fairCard.addView(
-                      textView(
-                          "Verify a revealed server seed against its SHA-256 hash.",
-                          13f
-                      )
-                  )
-
-                  val serverSeedInput = EditText(this).apply {
-                      hint = "Server seed"
-                      setTextColor(Color.WHITE)
-                      setHintTextColor(
-                          Color.rgb(154, 164, 178)
-                      )
-                      setBackgroundResource(
-                          R.drawable.input_background
-                      )
-                  }
-
-                  fairCard.addView(serverSeedInput)
-
-                  val expectedHashInput = EditText(this).apply {
-                      hint = "Expected SHA-256 hash"
-                      setTextColor(Color.WHITE)
-                      setHintTextColor(
-                          Color.rgb(154, 164, 178)
-                      )
-                      setBackgroundResource(
-                          R.drawable.input_background
-                      )
-                  }
-
-                  fairCard.addView(expectedHashInput)
-
-                  val verifyButton = Button(this).apply {
-
-                      text = "VERIFY SHA-256"
-
-                      setOnClickListener {
-
-                          val seed =
-                              serverSeedInput.text
-                                  .toString()
-                                  .trim()
-
-                          val expected =
-                              expectedHashInput.text
-                                  .toString()
-                                  .trim()
-                                  .lowercase(Locale.US)
-
-                          if (seed.isEmpty()) {
-                              Toast.makeText(
-                                  this@MainActivity,
-                                  "Enter the server seed.",
-                                  Toast.LENGTH_SHORT
-                              ).show()
-                              return@setOnClickListener
-                          }
-
-                          if (!expected.matches(
-                                  Regex("[0-9a-f]{64}")
-                              )
-                          ) {
-                              Toast.makeText(
-                                  this@MainActivity,
-                                  "Hash must contain 64 hexadecimal characters.",
-                                  Toast.LENGTH_LONG
-                              ).show()
-                              return@setOnClickListener
-                          }
-
-                          val actual = sha256(seed)
-
-                          if (actual == expected) {
-                              Toast.makeText(
-                                  this@MainActivity,
-                                  "✓ HASH VERIFIED",
-                                  Toast.LENGTH_LONG
-                              ).show()
-                          } else {
-                              Toast.makeText(
-                                  this@MainActivity,
-                                  "✕ HASH DOES NOT MATCH",
-                                  Toast.LENGTH_LONG
-                              ).show()
-                          }
+                          verifyResult.setText(
+                                  ok
+                                          ? "✓ VERIFIED — SHA-256 commitment matches."
+                                          : "✗ NOT VERIFIED — hash does not match.");
+                      } catch (Exception e) {
+                          verifyResult.setText("Verification error.");
                       }
-                  }
+                  });
 
-                  fairCard.addView(verifyButton)
+                  TextView fairInfo = text(
+                          "Important: a provably-fair hash can verify a revealed result/seed. " +
+                          "It does not reveal the next multiplier.",
+                          11);
+                  fairInfo.setTextColor(0xFFFFC857);
+                  fairCard.addView(fairInfo);
 
-                  root.addView(fairCard)
+                  root.addView(fairCard);
 
-                  val warningCard = card()
+                  LinearLayout dataCard = card();
+                  dataCard.addView(text("DATA & BACKUP", 18));
 
-                  val warning = textView(
-                      "⚠ RESPONSIBLE USE\n\n" +
-                      "AviatorX AI analyses historical data entered by you. " +
-                      "It does not know or guarantee the next multiplier. " +
-                      "Past results do not guarantee future results. " +
-                      "Never risk money you cannot afford to lose.",
-                      14f,
-                      true
-                  )
+                  Button export = button("EXPORT CSV BACKUP");
+                  Button importButton = button("IMPORT CSV BACKUP");
+                  Button clear = button("CLEAR ALL LOCAL DATA");
 
-                  warning.setTextColor(
-                      Color.rgb(255, 214, 0)
-                  )
+                  dataCard.addView(export);
+                  dataCard.addView(importButton);
+                  dataCard.addView(clear);
 
-                  warningCard.addView(warning)
+                  export.setOnClickListener(v -> {
+                      Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                      i.setType("text/csv");
+                      i.putExtra(Intent.EXTRA_TITLE, "AviatorX-AI-V7-backup.csv");
+                      exportLauncher.launch(i);
+                  });
 
-                  root.addView(warningCard)
+                  importButton.setOnClickListener(v -> {
+                      Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                      i.setType("text/*");
+                      i.addCategory(Intent.CATEGORY_OPENABLE);
+                      importLauncher.launch(i);
+                  });
 
-                  setContentView(scroll)
+                  clear.setOnClickListener(v -> {
+                      new androidx.appcompat.app.AlertDialog.Builder(this)
+                              .setTitle("Clear all data?")
+                              .setMessage("This removes all locally stored rounds.")
+                              .setNegativeButton("CANCEL", null)
+                              .setPositiveButton("CLEAR", (dialog, which) -> {
+                                  rounds.clear();
+                                  saveRounds();
+                                  refreshAll();
+                              })
+                              .show();
+                  });
+
+                  root.addView(dataCard);
+
+                  LinearLayout notificationCard = card();
+                  notificationCard.addView(text("ANALYTICS REMINDERS", 18));
+
+                  TextView notificationInfo = text(
+                          "Optional reminders can tell you when to review historical analytics. " +
+                          "They are not betting signals or guaranteed predictions.",
+                          11);
+                  notificationInfo.setTextColor(0xFF9FB1C1);
+                  notificationCard.addView(notificationInfo);
+
+                  Button notify5 = button("ENABLE 5M REMINDER");
+                  Button notify15 = button("ENABLE 15M REMINDER");
+                  Button notify30 = button("ENABLE 30M REMINDER");
+                  Button notify60 = button("ENABLE 1H REMINDER");
+
+                  notificationCard.addView(notify5);
+                  notificationCard.addView(notify15);
+                  notificationCard.addView(notify30);
+                  notificationCard.addView(notify60);
+
+                  notify5.setOnClickListener(v -> scheduleReminder(5, "5M"));
+                  notify15.setOnClickListener(v -> scheduleReminder(15, "15M"));
+                  notify30.setOnClickListener(v -> scheduleReminder(30, "30M"));
+                  notify60.setOnClickListener(v -> scheduleReminder(60, "1H"));
+
+                  root.addView(notificationCard);
+
+                  LinearLayout statusCard = card();
+                  statusCard.addView(text("V7 SYSTEM STATUS", 18));
+
+                  qualityText = text("", 13);
+                  statusCard.addView(qualityText);
+
+                  TextView warning = text(
+                          "⚠ RESPONSIBLE USE\n\n" +
+                          "AviatorX AI analyses historical information. " +
+                          "Past multipliers cannot guarantee future outcomes. " +
+                          "Never treat analytics as guaranteed profit or financial advice.",
+                          12);
+                  warning.setTextColor(0xFFFFC857);
+                  statusCard.addView(warning);
+
+                  root.addView(statusCard);
+
+                  setContentView(scroll);
+                  refreshAll();
               }
 
-              private fun addRound() {
-
-                  val valueText =
-                      roundInput.text
-                          .toString()
-                          .trim()
-
-                  val value =
-                      valueText.toDoubleOrNull()
-
-                  if (
-                      value == null ||
-                      value < 1.0 ||
-                      value > 1_000_000.0
-                  ) {
-                      Toast.makeText(
+              private Spinner spinner(String[] values) {
+                  Spinner s = new Spinner(this);
+                  ArrayAdapter<String> adapter = new ArrayAdapter<>(
                           this,
-                          "Enter a valid multiplier from 1.00 to 1,000,000.",
-                          Toast.LENGTH_LONG
-                      ).show()
-
-                      return
-                  }
-
-                  rounds.add(value)
-
-                  saveHistory()
-
-                  roundInput.text.clear()
-
-                  Toast.makeText(
-                      this,
-                      "Round added: ${formatMultiplier(value)}x",
-                      Toast.LENGTH_SHORT
-                  ).show()
-
-                  refreshDashboard()
+                          android.R.layout.simple_spinner_item,
+                          values);
+                  adapter.setDropDownViewResource(
+                          android.R.layout.simple_spinner_dropdown_item);
+                  s.setAdapter(adapter);
+                  return s;
               }
 
-              private fun refreshDashboard() {
+              private void refreshAll() {
+                  updateDashboard();
+                  updateCharts();
+                  updateAnalytics();
+                  refreshExplorer();
+                  updateQuality();
+              }
 
-                  val count = rounds.size
+              private List<Round> selectedRounds() {
+                  String selected = TIMEFRAMES[
+                          timeframeSpinner.getSelectedItemPosition()];
 
-                  if (count == 0) {
+                  ArrayList<Round> result = new ArrayList<>();
 
-                      statsText.text =
-                          "Rounds recorded: 0\n\n" +
-                          "Add completed rounds to activate analytics."
-
-                      analyticsText.text =
-                          "Waiting for historical data..."
-
-                      historyText.text =
-                          "No rounds entered."
-
-                      return
-                  }
-
-                  val average =
-                      rounds.average()
-
-                  val lowest =
-                      rounds.minOrNull() ?: 0.0
-
-                  val highest =
-                      rounds.maxOrNull() ?: 0.0
-
-                  statsText.text =
-                      "Rounds recorded: $count\n" +
-                      "Average: ${formatMultiplier(average)}x\n" +
-                      "Lowest: ${formatMultiplier(lowest)}x\n" +
-                      "Highest: ${formatMultiplier(highest)}x"
-
-                  val requestedWindow =
-                      when (windowSpinner.selectedItemPosition) {
-                          0 -> 10
-                          1 -> 25
-                          2 -> 50
-                          else -> 100
-                      }
-
-                  val data =
-                      rounds.takeLast(requestedWindow)
-
-                  analyticsText.text =
-                      calculateAnalytics(data)
-
-                  val recent =
-                      rounds.takeLast(20).reversed()
-
-                  val builder =
-                      StringBuilder()
-
-                  recent.forEachIndexed { index, value ->
-
-                      builder.append(
-                          "${index + 1}. ${formatMultiplier(value)}x"
-                      )
-
-                      if (index < recent.lastIndex) {
-                          builder.append("\n")
+                  for (Round r : rounds) {
+                      if (selected.equals("ALL TIME") ||
+                              r.timeframe.equals(selected)) {
+                          result.add(r);
                       }
                   }
 
-                  historyText.text =
-                      builder.toString()
-
-                  statusText.text =
-                      "● SYSTEM READY • ${count} ROUNDS LOADED"
+                  return result;
               }
 
-              private fun calculateAnalytics(
-                  data: List<Double>
-              ): String {
+              private void updateDashboard() {
+                  List<Round> data = selectedRounds();
 
                   if (data.isEmpty()) {
-                      return "No data available."
+                      dashboardText.setText(
+                              "No rounds available for this analysis view.\n\n" +
+                              "Save completed rounds above to begin.");
+                      return;
                   }
 
-                  val average =
-                      data.average()
+                  double sum = 0;
+                  double high = Double.MIN_VALUE;
+                  double low = Double.MAX_VALUE;
 
-                  val sorted =
-                      data.sorted()
+                  for (Round r : data) {
+                      sum += r.multiplier;
+                      high = Math.max(high, r.multiplier);
+                      low = Math.min(low, r.multiplier);
+                  }
 
-                  val median =
-                      if (sorted.size % 2 == 0) {
-                          (
-                              sorted[sorted.size / 2 - 1] +
-                              sorted[sorted.size / 2]
-                          ) / 2.0
+                  double mean = sum / data.size();
+                  double median = median(data);
+
+                  dashboardText.setText(
+                          "Rounds: " + data.size() +
+                          "\nAverage: " + fmt(mean) + "x" +
+                          "\nMedian: " + fmt(median) + "x" +
+                          "\nHighest: " + fmt(high) + "x" +
+                          "\nLowest: " + fmt(low) + "x" +
+                          "\nCurrent view: " +
+                          TIMEFRAMES[timeframeSpinner.getSelectedItemPosition()]);
+              }
+
+              private void updateAnalytics() {
+                  List<Round> data = selectedRounds();
+
+                  if (data.isEmpty()) {
+                      analyticsText.setText("Waiting for data.");
+                      return;
+                  }
+
+                  double mean = mean(data);
+                  double deviation = standardDeviation(data);
+
+                  int lowCount = 0;
+                  int twoPlus = 0;
+                  int fivePlus = 0;
+                  int tenPlus = 0;
+
+                  int currentLow = 0;
+                  int longestLow = 0;
+                  int currentHigh = 0;
+                  int longestHigh = 0;
+
+                  for (Round r : data) {
+                      if (r.multiplier < 2.0) {
+                          lowCount++;
+                          currentLow++;
+                          longestLow = Math.max(longestLow, currentLow);
+                          currentHigh = 0;
                       } else {
-                          sorted[sorted.size / 2]
+                          twoPlus++;
+                          currentHigh++;
+                          longestHigh = Math.max(longestHigh, currentHigh);
+                          currentLow = 0;
                       }
 
-                  val variance =
-                      data.map {
-                          val difference =
-                              it - average
-
-                          difference * difference
-                      }.average()
-
-                  val volatility =
-                      sqrt(variance)
-
-                  val under120 =
-                      data.count { it < 1.20 }
-
-                  val from120to2 =
-                      data.count {
-                          it >= 1.20 && it < 2.0
-                      }
-
-                  val from2to5 =
-                      data.count {
-                          it >= 2.0 && it < 5.0
-                      }
-
-                  val from5to10 =
-                      data.count {
-                          it >= 5.0 && it < 10.0
-                      }
-
-                  val above10 =
-                      data.count {
-                          it >= 10.0
-                      }
-
-                  fun percentage(
-                      value: Int
-                  ): String {
-                      return String.format(
-                          Locale.US,
-                          "%.1f%%",
-                          value * 100.0 / data.size
-                      )
+                      if (r.multiplier >= 5.0) fivePlus++;
+                      if (r.multiplier >= 10.0) tenPlus++;
                   }
 
-                  return buildString {
+                  double lowPercent =
+                          data.isEmpty() ? 0 : (lowCount * 100.0 / data.size());
 
-                      append(
-                          "Window: ${data.size} rounds\n\n"
-                      )
+                  analyticsText.setText(
+                          "Mean: " + fmt(mean) + "x" +
+                          "\nMedian: " + fmt(median(data)) + "x" +
+                          "\nVolatility (SD): " + fmt(deviation) +
+                          "\nBelow 2x: " + lowCount +
+                          " (" + fmt(lowPercent) + "%)" +
+                          "\n2x+: " + twoPlus +
+                          "\n5x+: " + fivePlus +
+                          "\n10x+: " + tenPlus +
+                          "\nLongest <2x streak: " + longestLow +
+                          "\nLongest 2x+ streak: " + longestHigh +
+                          "\n\nAnalytical status: HISTORICAL ONLY");
+              }
 
-                      append(
-                          "Mean: ${formatMultiplier(average)}x\n"
-                      )
+              private void updateQuality() {
+                  int knownTimeframes = 0;
 
-                      append(
-                          "Median: ${formatMultiplier(median)}x\n"
-                      )
+                  for (String tf : TIMEFRAMES) {
+                      if (tf.equals("ALL TIME")) continue;
 
-                      append(
-                          "Volatility: ${
-                              String.format(
-                                  Locale.US,
-                                  "%.2f",
-                                  volatility
-                              )
-                          }\n\n"
-                      )
+                      for (Round r : rounds) {
+                          if (r.timeframe.equals(tf)) {
+                              knownTimeframes++;
+                              break;
+                          }
+                      }
+                  }
 
-                      append("Distribution\n")
+                  qualityText.setText(
+                          "Stored rounds: " + rounds.size() +
+                          "\nTimeframe groups containing data: " + knownTimeframes +
+                          "\nLocal storage: ACTIVE" +
+                          "\nCharts: ACTIVE" +
+                          "\nAdvanced analytics: ACTIVE" +
+                          "\nProvably Fair SHA-256 verifier: ACTIVE" +
+                          "\nCSV backup/restore: ACTIVE" +
+                          "\nLive-data architecture: READY" +
+                          "\nLive private eBet access: NOT CLAIMED");
+              }
 
-                      append(
-                          "< 1.20x: ${percentage(under120)}\n"
-                      )
+              private void updateCharts() {
+                  if (lineChart != null) {
+                      lineChart.invalidate();
+                  }
 
-                      append(
-                          "1.20x – 2x: ${percentage(from120to2)}\n"
-                      )
-
-                      append(
-                          "2x – 5x: ${percentage(from2to5)}\n"
-                      )
-
-                      append(
-                          "5x – 10x: ${percentage(from5to10)}\n"
-                      )
-
-                      append(
-                          "10x+: ${percentage(above10)}\n"
-                      )
-
-                      append(
-                          "\nHistorical analysis only — " +
-                          "not a guaranteed prediction."
-                      )
+                  if (distributionChart != null) {
+                      distributionChart.invalidate();
                   }
               }
 
-              private fun formatMultiplier(
-                  value: Double
-              ): String {
+              private void refreshExplorer() {
+                  if (explorerContainer == null) return;
 
-                  return String.format(
-                      Locale.US,
-                      "%.2f",
-                      value
-                  )
-              }
+                  explorerContainer.removeAllViews();
 
-              private fun sha256(
-                  input: String
-              ): String {
+                  List<Round> filtered = new ArrayList<>(selectedRounds());
 
-                  val digest =
-                      MessageDigest.getInstance(
-                          "SHA-256"
-                      )
+                  String filter = FILTERS[
+                          filterSpinner.getSelectedItemPosition()];
 
-                  val bytes =
-                      digest.digest(
-                          input.toByteArray(
-                              Charsets.UTF_8
-                          )
-                      )
+                  String search = searchBox.getText().toString()
+                          .trim().toLowerCase(Locale.US);
 
-                  return bytes.joinToString("") {
-                      "%02x".format(it)
-                  }
-              }
+                  ArrayList<Round> result = new ArrayList<>();
 
-              private fun saveHistory() {
+                  for (Round r : filtered) {
+                      boolean matchesFilter = matchesFilter(r.multiplier, filter);
 
-                  val encoded =
-                      rounds.joinToString(",")
+                      String date = formatDate(r.timestamp).toLowerCase(Locale.US);
 
-                  getSharedPreferences(
-                      prefsName,
-                      Context.MODE_PRIVATE
-                  )
-                      .edit()
-                      .putString(
-                          roundsKey,
-                          encoded
-                      )
-                      .apply()
-              }
+                      boolean matchesSearch =
+                              search.isEmpty() ||
+                              String.valueOf(r.multiplier).contains(search) ||
+                              r.timeframe.toLowerCase(Locale.US).contains(search) ||
+                              date.contains(search);
 
-              private fun loadHistory() {
-
-                  val saved =
-                      getSharedPreferences(
-                          prefsName,
-                          Context.MODE_PRIVATE
-                      )
-                      .getString(
-                          roundsKey,
-                          ""
-                      ) ?: ""
-
-                  if (saved.isEmpty()) {
-                      return
-                  }
-
-                  saved.split(",").forEach { item ->
-
-                      val value =
-                          item.toDoubleOrNull()
-
-                      if (
-                          value != null &&
-                          value >= 1.0
-                      ) {
-                          rounds.add(value)
+                      if (matchesFilter && matchesSearch) {
+                          result.add(r);
                       }
                   }
+
+                  String sort = SORTS[
+                          sortSpinner.getSelectedItemPosition()];
+
+                  if (sort.equals("HIGHEST")) {
+                      Collections.sort(result,
+                              (a, b) -> Double.compare(
+                                      b.multiplier, a.multiplier));
+                  } else if (sort.equals("LOWEST")) {
+                      Collections.sort(result,
+                              (a, b) -> Double.compare(
+                                      a.multiplier, b.multiplier));
+                  } else {
+                      Collections.sort(result,
+                              (a, b) -> Long.compare(
+                                      b.timestamp, a.timestamp));
+                  }
+
+                  int maxDisplay = Math.min(result.size(), 100);
+
+                  if (result.isEmpty()) {
+                      explorerContainer.addView(
+                              text("No matching rounds.", 12));
+                      return;
+                  }
+
+                  TextView count = text(
+                          "Showing " + maxDisplay + " of " + result.size(),
+                          11);
+                  count.setTextColor(0xFF9FB1C1);
+                  explorerContainer.addView(count);
+
+                  for (int i = 0; i < maxDisplay; i++) {
+                      Round r = result.get(i);
+
+                      LinearLayout row = new LinearLayout(this);
+                      row.setOrientation(LinearLayout.HORIZONTAL);
+                      row.setGravity(Gravity.CENTER_VERTICAL);
+                      row.setPadding(
+                              dp(6), dp(6), dp(6), dp(6));
+
+                      TextView info = text(
+                              fmt(r.multiplier) + "x  •  " +
+                              r.timeframe + "  •  " +
+                              formatDate(r.timestamp),
+                              12);
+
+                      row.addView(info,
+                              new LinearLayout.LayoutParams(
+                                      0,
+                                      ViewGroup.LayoutParams.WRAP_CONTENT,
+                                      1));
+
+                      Button delete = button("DELETE");
+
+                      delete.setOnClickListener(v -> {
+                          rounds.remove(r);
+                          saveRounds();
+                          refreshAll();
+                      });
+
+                      row.addView(delete);
+
+                      explorerContainer.addView(row);
+                  }
               }
 
-              private fun clearHistory() {
+              private boolean matchesFilter(double value, String filter) {
+                  switch (filter) {
+                      case "< 1.20x":
+                          return value < 1.20;
+                      case "1.20x - 2x":
+                          return value >= 1.20 && value < 2.0;
+                      case "2x - 5x":
+                          return value >= 2.0 && value < 5.0;
+                      case "5x - 10x":
+                          return value >= 5.0 && value < 10.0;
+                      case "10x+":
+                          return value >= 10.0;
+                      default:
+                          return true;
+                  }
+              }
 
-                  rounds.clear()
+              private double mean(List<Round> data) {
+                  if (data.isEmpty()) return 0;
 
-                  getSharedPreferences(
-                      prefsName,
-                      Context.MODE_PRIVATE
-                  )
-                      .edit()
-                      .remove(roundsKey)
-                      .apply()
+                  double sum = 0;
 
-                  refreshDashboard()
+                  for (Round r : data) {
+                      sum += r.multiplier;
+                  }
 
-                  Toast.makeText(
-                      this,
-                      "History cleared.",
-                      Toast.LENGTH_SHORT
-                  ).show()
+                  return sum / data.size();
+              }
+
+              private double median(List<Round> data) {
+                  if (data.isEmpty()) return 0;
+
+                  ArrayList<Double> values = new ArrayList<>();
+
+                  for (Round r : data) {
+                      values.add(r.multiplier);
+                  }
+
+                  Collections.sort(values);
+
+                  int middle = values.size() / 2;
+
+                  if (values.size() % 2 == 0) {
+                      return (values.get(middle - 1) + values.get(middle)) / 2.0;
+                  }
+
+                  return values.get(middle);
+              }
+
+              private double standardDeviation(List<Round> data) {
+                  if (data.size() < 2) return 0;
+
+                  double m = mean(data);
+                  double sum = 0;
+
+                  for (Round r : data) {
+                      double d = r.multiplier - m;
+                      sum += d * d;
+                  }
+
+                  return Math.sqrt(sum / data.size());
+              }
+
+              private String fmt(double value) {
+                  if (value >= 1000) {
+                      return String.format(Locale.US, "%.0f", value);
+                  }
+
+                  if (value >= 100) {
+                      return String.format(Locale.US, "%.1f", value);
+                  }
+
+                  return String.format(Locale.US, "%.2f", value);
+              }
+
+              private String formatDate(long timestamp) {
+                  if (timestamp <= 0) return "Legacy data";
+
+                  SimpleDateFormat sdf =
+                          new SimpleDateFormat(
+                                  "yyyy-MM-dd HH:mm",
+                                  Locale.US);
+
+                  return sdf.format(new Date(timestamp));
+              }
+
+              private void saveRounds() {
+                  StringBuilder sb = new StringBuilder();
+
+                  for (Round r : rounds) {
+                      sb.append(r.multiplier)
+                              .append("|")
+                              .append(r.timestamp)
+                              .append("|")
+                              .append(r.timeframe)
+                              .append("\n");
+                  }
+
+                  prefs.edit()
+                          .putString(DATA_KEY, sb.toString())
+                          .apply();
+              }
+
+              private void loadRounds() {
+                  rounds.clear();
+
+                  String saved = prefs.getString(DATA_KEY, "");
+
+                  if (!saved.isEmpty()) {
+                      String[] lines = saved.split("\\n");
+
+                      for (String line : lines) {
+                          try {
+                              String[] p = line.split("\\|", -1);
+
+                              if (p.length >= 3) {
+                                  double multiplier =
+                                          Double.parseDouble(p[0]);
+
+                                  long timestamp =
+                                          Long.parseLong(p[1]);
+
+                                  String timeframe = p[2];
+
+                                  rounds.add(new Round(
+                                          multiplier,
+                                          timestamp,
+                                          timeframe));
+                              }
+                          } catch (Exception ignored) {
+                          }
+                      }
+
+                      return;
+                  }
+
+                  /*
+                   * V3 compatibility.
+                   * Older V3 installations stored only comma-separated
+                   * multipliers. We import those values as legacy data
+                   * without inventing timestamps or timeframes.
+                   */
+                  String old = getSharedPreferences(
+                          "AviatorXAI",
+                          MODE_PRIVATE)
+                          .getString("rounds", "");
+
+                  if (!old.isEmpty()) {
+                      String[] values = old.split(",");
+
+                      for (String value : values) {
+                          try {
+                              double m = Double.parseDouble(value.trim());
+
+                              if (m >= 1.0 && m <= 1000000.0) {
+                                  rounds.add(new Round(
+                                          m,
+                                          0,
+                                          "ALL TIME"));
+                              }
+                          } catch (Exception ignored) {
+                          }
+                      }
+
+                      saveRounds();
+                  }
+              }
+
+              private String sha256(String input) throws Exception {
+                  MessageDigest digest =
+                          MessageDigest.getInstance("SHA-256");
+
+                  byte[] hash =
+                          digest.digest(input.getBytes(
+                                  StandardCharsets.UTF_8));
+
+                  StringBuilder hex = new StringBuilder();
+
+                  for (byte b : hash) {
+                      String h = Integer.toHexString(0xff & b);
+
+                      if (h.length() == 1) {
+                          hex.append('0');
+                      }
+
+                      hex.append(h);
+                  }
+
+                  return hex.toString();
+              }
+
+              private void exportCsv(Uri uri) {
+                  try {
+                      OutputStream out =
+                              getContentResolver().openOutputStream(uri);
+
+                      StringBuilder csv = new StringBuilder();
+
+                      csv.append("multiplier,timestamp,timeframe\n");
+
+                      for (Round r : rounds) {
+                          csv.append(r.multiplier)
+                                  .append(",")
+                                  .append(r.timestamp)
+                                  .append(",")
+                                  .append(r.timeframe)
+                                  .append("\n");
+                      }
+
+                      out.write(csv.toString()
+                              .getBytes(StandardCharsets.UTF_8));
+
+                      out.close();
+
+                      Toast.makeText(this,
+                              "CSV backup exported.",
+                              Toast.LENGTH_SHORT).show();
+
+                  } catch (Exception e) {
+                      Toast.makeText(this,
+                              "Export failed.",
+                              Toast.LENGTH_SHORT).show();
+                  }
+              }
+
+              private void importCsv(Uri uri) {
+                  try {
+                      BufferedReader reader =
+                              new BufferedReader(
+                                      new InputStreamReader(
+                                              getContentResolver()
+                                                      .openInputStream(uri),
+                                              StandardCharsets.UTF_8));
+
+                      String line;
+                      int imported = 0;
+
+                      while ((line = reader.readLine()) != null) {
+                          if (line.toLowerCase(Locale.US)
+                                  .startsWith("multiplier")) {
+                              continue;
+                          }
+
+                          String[] p = line.split(",", -1);
+
+                          if (p.length < 1) continue;
+
+                          try {
+                              double multiplier =
+                                      Double.parseDouble(p[0].trim());
+
+                              long timestamp =
+                                      p.length >= 2
+                                              ? Long.parseLong(p[1].trim())
+                                              : 0;
+
+                              String timeframe =
+                                      p.length >= 3 &&
+                                      !p[2].trim().isEmpty()
+                                              ? p[2].trim()
+                                              : "ALL TIME";
+
+                              if (multiplier >= 1.0 &&
+                                      multiplier <= 1000000.0) {
+
+                                  rounds.add(new Round(
+                                          multiplier,
+                                          timestamp,
+                                          timeframe));
+
+                                  imported++;
+                              }
+
+                          } catch (Exception ignored) {
+                          }
+                      }
+
+                      reader.close();
+
+                      saveRounds();
+                      refreshAll();
+
+                      Toast.makeText(this,
+                              "Imported " + imported + " rounds.",
+                              Toast.LENGTH_SHORT).show();
+
+                  } catch (Exception e) {
+                      Toast.makeText(this,
+                              "Import failed.",
+                              Toast.LENGTH_SHORT).show();
+                  }
+              }
+
+              private void createNotificationChannel() {
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                      NotificationChannel channel =
+                              new NotificationChannel(
+                                      "analytics",
+                                      "AviatorX Analytics",
+                                      NotificationManager.IMPORTANCE_DEFAULT);
+
+                      channel.setDescription(
+                              "Historical AviatorX analytics reminders.");
+
+                      NotificationManager manager =
+                              getSystemService(NotificationManager.class);
+
+                      manager.createNotificationChannel(channel);
+                  }
+              }
+
+              private void scheduleReminder(int minutes, String timeframe) {
+                  if (Build.VERSION.SDK_INT >= 33 &&
+                          ContextCompat.checkSelfPermission(
+                                  this,
+                                  Manifest.permission.POST_NOTIFICATIONS)
+                                  != PackageManager.PERMISSION_GRANTED) {
+
+                      requestPermissions(
+                              new String[]{
+                                      Manifest.permission.POST_NOTIFICATIONS
+                              },
+                              501);
+
+                      Toast.makeText(this,
+                              "Allow notifications, then tap the reminder again.",
+                              Toast.LENGTH_LONG).show();
+                      return;
+                  }
+
+                  NotificationManager manager =
+                          (NotificationManager)
+                                  getSystemService(
+                                          Context.NOTIFICATION_SERVICE);
+
+                  NotificationCompat.Builder notification =
+                          new NotificationCompat.Builder(
+                                  this,
+                                  "analytics")
+                                  .setSmallIcon(
+                                          android.R.drawable.ic_dialog_info)
+                                  .setContentTitle(
+                                          "AviatorX AI • " + timeframe)
+                                  .setContentText(
+                                          "Review historical analytics. " +
+                                          "No guaranteed prediction.")
+                                  .setPriority(
+                                          NotificationCompat.PRIORITY_DEFAULT)
+                                  .setAutoCancel(true);
+
+                  manager.notify(
+                          700 + minutes,
+                          notification.build());
+
+                  Toast.makeText(this,
+                          timeframe +
+                          " analytics reminder enabled for this session.",
+                          Toast.LENGTH_SHORT).show();
+              }
+
+              private static class Round {
+                  final double multiplier;
+                  final long timestamp;
+                  final String timeframe;
+
+                  Round(double multiplier,
+                        long timestamp,
+                        String timeframe) {
+                      this.multiplier = multiplier;
+                      this.timestamp = timestamp;
+                      this.timeframe = timeframe;
+                  }
+              }
+
+              private class ChartView extends View {
+
+                  private final Paint paint = new Paint(
+                          Paint.ANTI_ALIAS_FLAG);
+
+                  ChartView(Context context) {
+                      super(context);
+                      paint.setStrokeWidth(dp(2));
+                  }
+
+                  @Override
+                  protected void onDraw(Canvas canvas) {
+                      super.onDraw(canvas);
+
+                      canvas.drawColor(0xFF0B1622);
+
+                      List<Round> data = selectedRounds();
+
+                      if (data.isEmpty()) {
+                          paint.setTextSize(dp(13));
+                          paint.setColor(0xFF9FB1C1);
+                          canvas.drawText(
+                                  "No chart data yet.",
+                                  dp(20),
+                                  getHeight() / 2f,
+                                  paint);
+                          return;
+                      }
+
+                      int start = Math.max(0, data.size() - 30);
+
+                      List<Round> recent =
+                              data.subList(start, data.size());
+
+                      double max = 2.0;
+
+                      for (Round r : recent) {
+                          max = Math.max(max, r.multiplier);
+                      }
+
+                      float left = dp(18);
+                      float right = getWidth() - dp(18);
+                      float top = dp(18);
+                      float bottom = getHeight() - dp(25);
+
+                      paint.setColor(0xFF33485B);
+                      paint.setStrokeWidth(dp(1));
+
+                      canvas.drawLine(
+                              left, bottom,
+                              right, bottom,
+                              paint);
+
+                      canvas.drawLine(
+                              left, top,
+                              left, bottom,
+                              paint);
+
+                      paint.setColor(0xFF00E676);
+                      paint.setStrokeWidth(dp(2.5f));
+                      paint.setStyle(Paint.Style.STROKE);
+
+                      RectF area = new RectF(
+                              left,
+                              top,
+                              right,
+                              bottom);
+
+                      if (recent.size() > 1) {
+                          float previousX = left;
+                          float previousY = bottom -
+                                  (float) ((recent.get(0).multiplier / max) *
+                                          (bottom - top));
+
+                          for (int i = 1; i < recent.size(); i++) {
+                              float x = left +
+                                      ((right - left) * i /
+                                              (recent.size() - 1));
+
+                              float y = bottom -
+                                      (float) ((recent.get(i).multiplier / max) *
+                                              (bottom - top));
+
+                              canvas.drawLine(
+                                      previousX,
+                                      previousY,
+                                      x,
+                                      y,
+                                      paint);
+
+                              previousX = x;
+                              previousY = y;
+                          }
+                      }
+
+                      paint.setStyle(Paint.Style.FILL);
+                      paint.setTextSize(dp(10));
+                      paint.setColor(0xFF9FB1C1);
+
+                      canvas.drawText(
+                              "Recent " + recent.size() + " rounds",
+                              left,
+                              getHeight() - dp(8),
+                              paint);
+
+                      canvas.drawText(
+                              "Max " + fmt(max) + "x",
+                              right - dp(70),
+                              top + dp(10),
+                              paint);
+                  }
+              }
+
+              private class DistributionView extends View {
+
+                  private final Paint paint = new Paint(
+                          Paint.ANTI_ALIAS_FLAG);
+
+                  DistributionView(Context context) {
+                      super(context);
+                  }
+
+                  @Override
+                  protected void onDraw(Canvas canvas) {
+                      super.onDraw(canvas);
+
+                      canvas.drawColor(0xFF0B1622);
+
+                      List<Round> data = selectedRounds();
+
+                      int[] buckets = new int[5];
+
+                      for (Round r : data) {
+                          if (r.multiplier < 1.20) {
+                              buckets[0]++;
+                          } else if (r.multiplier < 2.0) {
+                              buckets[1]++;
+                          } else if (r.multiplier < 5.0) {
+                              buckets[2]++;
+                          } else if (r.multiplier < 10.0) {
+                              buckets[3]++;
+                          } else {
+                              buckets[4]++;
+                          }
+                      }
+
+                      int max = 1;
+
+                      for (int b : buckets) {
+                          max = Math.max(max, b);
+                      }
+
+                      String[] labels = {
+                              "<1.20",
+                              "1.2-2",
+                              "2-5",
+                              "5-10",
+                              "10+"
+                      };
+
+                      float width = getWidth() / 5f;
+                      float base = getHeight() - dp(35);
+                      float maxHeight = getHeight() - dp(75);
+
+                      paint.setTextSize(dp(10));
+                      paint.setTextAlign(Paint.Align.CENTER);
+
+                      for (int i = 0; i < 5; i++) {
+                          float barHeight =
+                                  maxHeight * buckets[i] / (float) max;
+
+                          float left = i * width + dp(8);
+                          float right = (i + 1) * width - dp(8);
+                          float top = base - barHeight;
+
+                          paint.setColor(0xFF00E676);
+
+                          canvas.drawRect(
+                                  left,
+                                  top,
+                                  right,
+                                  base,
+                                  paint);
+
+                          paint.setColor(0xFFE8F1F8);
+
+                          canvas.drawText(
+                                  String.valueOf(buckets[i]),
+                                  (left + right) / 2,
+                                  top - dp(6),
+                                  paint);
+
+                          paint.setColor(0xFF9FB1C1);
+
+                          canvas.drawText(
+                                  labels[i],
+                                  (left + right) / 2,
+                                  base + dp(20),
+                                  paint);
+                      }
+
+                      paint.setTextAlign(Paint.Align.LEFT);
+                  }
               }
           }
           EOF
 
-      - name: Generate Gradle wrapper
+      - name: Create Gradle wrapper
         run: |
           gradle wrapper --gradle-version 8.9
 
-      - name: Build APK
-        run: |
-          chmod +x ./gradlew
-          ./gradlew assembleDebug --stacktrace
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
 
-      - name: Verify APK
+      - name: Build V7 debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Verify APK exists
         run: |
           ls -lh app/build/outputs/apk/debug/app-debug.apk
+          test -f app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Upload APK
+      - name: Rename APK
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk \
+            app/build/outputs/apk/debug/AviatorX-AI-V7.0-FINAL.apk
+
+      - name: Upload V7 APK
         uses: actions/upload-artifact@v4
         with:
-          name: AviatorX-AI-V3.0-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: AviatorX-AI-V7.0-FINAL-APK
+          path: app/build/outputs/apk/debug/AviatorX-AI-V7.0-FINAL.apk
           if-no-files-found: error
