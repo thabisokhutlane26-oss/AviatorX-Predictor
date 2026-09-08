@@ -41,6 +41,7 @@ jobs:
           cat > gradle.properties <<'EOF'
           android.useAndroidX=true
           android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx2048m
           EOF
 
           cat > settings.gradle <<'EOF'
@@ -85,8 +86,8 @@ jobs:
                   applicationId 'com.aviatorx.predictor'
                   minSdk 24
                   targetSdk 35
-                  versionCode 1
-                  versionName "1.0"
+                  versionCode 2
+                  versionName "2.0"
               }
 
               compileOptions {
@@ -141,6 +142,7 @@ jobs:
                   <item name="android:windowLightStatusBar">false</item>
                   <item name="android:statusBarColor">#000000</item>
                   <item name="android:navigationBarColor">#000000</item>
+                  <item name="android:colorAccent">#FF3B30</item>
 
               </style>
 
@@ -150,33 +152,49 @@ jobs:
           cat > app/src/main/java/com/aviatorx/predictor/MainActivity.kt <<'EOF'
           package com.aviatorx.predictor
 
+          import android.content.Context
           import android.graphics.Color
           import android.os.Bundle
           import android.view.Gravity
+          import android.view.ViewGroup
           import android.widget.Button
+          import android.widget.EditText
           import android.widget.LinearLayout
           import android.widget.ScrollView
           import android.widget.TextView
+          import android.widget.Toast
           import androidx.appcompat.app.AppCompatActivity
-          import kotlin.random.Random
+          import java.security.MessageDigest
+          import java.util.Locale
 
           class MainActivity : AppCompatActivity() {
 
-              private lateinit var prediction: TextView
-              private lateinit var confidence: TextView
-              private lateinit var signal: TextView
+              private lateinit var serverSeed: EditText
+              private lateinit var expectedHash: EditText
+              private lateinit var clientSeed: EditText
+              private lateinit var multiplierInput: EditText
 
-              override fun onCreate(
-                  savedInstanceState: Bundle?
-              ) {
+              private lateinit var verificationResult: TextView
+              private lateinit var statistics: TextView
+              private lateinit var historyText: TextView
+
+              private val prefsName = "aviator_history"
+              private val historyKey = "rounds"
+
+              override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
+
+                  buildInterface()
+                  updateHistory()
+              }
+
+              private fun buildInterface() {
 
                   val scroll = ScrollView(this)
 
                   val root = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      gravity = Gravity.CENTER_HORIZONTAL
-                      setPadding(30, 40, 30, 40)
+                      setPadding(28, 35, 28, 35)
                       setBackgroundColor(Color.BLACK)
                   }
 
@@ -187,112 +205,517 @@ jobs:
                       gravity = Gravity.CENTER
                   }
 
-                  root.addView(title)
+                  root.addView(
+                      title,
+                      matchParams()
+                  )
 
-                  val subtitle = TextView(this).apply {
-                      text = "PREDICTOR"
-                      textSize = 20f
+                  val version = TextView(this).apply {
+                      text = "PROVABLY FAIR ANALYZER • V2.0"
+                      textSize = 14f
                       setTextColor(Color.LTGRAY)
                       gravity = Gravity.CENTER
-                      setPadding(0, 5, 0, 35)
-                  }
-
-                  root.addView(subtitle)
-
-                  prediction = TextView(this).apply {
-                      text = "2.00x"
-                      textSize = 52f
-                      setTextColor(Color.WHITE)
-                      gravity = Gravity.CENTER
-                      setPadding(0, 30, 0, 30)
+                      setPadding(0, 8, 0, 25)
                   }
 
                   root.addView(
-                      prediction,
-                      LinearLayout.LayoutParams(
-                          -1,
-                          160
-                      )
+                      version,
+                      matchParams()
                   )
 
-                  confidence = TextView(this).apply {
-                      text = "Confidence: --"
+                  val status = TextView(this).apply {
+                      text = "🟡 VERIFIED DATA MODE"
                       textSize = 18f
                       setTextColor(Color.WHITE)
                       gravity = Gravity.CENTER
-                      setPadding(0, 20, 0, 20)
+                      setPadding(15, 20, 15, 20)
                   }
 
-                  root.addView(confidence)
+                  root.addView(
+                      status,
+                      matchParams()
+                  )
 
-                  signal = TextView(this).apply {
-                      text = "Signal: READY"
-                      textSize = 20f
-                      setTextColor(Color.WHITE)
+                  val info = TextView(this).apply {
+                      text =
+                          "Verify completed Aviator rounds using the " +
+                          "server-seed SHA-256 commitment.\n\n" +
+                          "This app does NOT claim to predict the next crash."
+                      textSize = 15f
+                      setTextColor(Color.LTGRAY)
                       gravity = Gravity.CENTER
-                      setPadding(0, 20, 0, 30)
+                      setPadding(10, 10, 10, 25)
                   }
 
-                  root.addView(signal)
+                  root.addView(
+                      info,
+                      matchParams()
+                  )
 
-                  val button = Button(this).apply {
-                      text = "GENERATE ESTIMATE"
+                  serverSeed = createInput(
+                      "Revealed Server Seed"
+                  )
+
+                  root.addView(serverSeed)
+
+                  expectedHash = createInput(
+                      "Server Seed SHA-256"
+                  )
+
+                  root.addView(expectedHash)
+
+                  clientSeed = createInput(
+                      "Client Seed (optional)"
+                  )
+
+                  root.addView(clientSeed)
+
+                  multiplierInput = createInput(
+                      "Completed Multiplier e.g. 2.35"
+                  )
+
+                  root.addView(multiplierInput)
+
+                  val verifyButton = Button(this).apply {
+                      text = "🔐 VERIFY SERVER SEED"
                       textSize = 16f
 
                       setOnClickListener {
-
-                          val value =
-                              Random.nextDouble(1.10, 8.00)
-
-                          val percent =
-                              Random.nextInt(55, 91)
-
-                          val level =
-                              when {
-                                  value < 1.50 -> "LOW"
-                                  value < 3.00 -> "MEDIUM"
-                                  else -> "HIGH"
-                              }
-
-                          prediction.text =
-                              String.format(
-                                  "%.2fx",
-                                  value
-                              )
-
-                          confidence.text =
-                              "Confidence: $percent%"
-
-                          signal.text =
-                              "Signal: $level"
+                          verifyServerSeed()
                       }
                   }
 
                   root.addView(
-                      button,
-                      LinearLayout.LayoutParams(
-                          -1,
-                          60
-                      )
+                      verifyButton,
+                      buttonParams()
+                  )
+
+                  verificationResult = TextView(this).apply {
+                      text = "Verification waiting..."
+                      textSize = 18f
+                      setTextColor(Color.WHITE)
+                      gravity = Gravity.CENTER
+                      setPadding(10, 25, 10, 25)
+                  }
+
+                  root.addView(
+                      verificationResult,
+                      matchParams()
+                  )
+
+                  val addButton = Button(this).apply {
+                      text = "➕ ADD COMPLETED ROUND"
+                      textSize = 16f
+
+                      setOnClickListener {
+                          addRound()
+                      }
+                  }
+
+                  root.addView(
+                      addButton,
+                      buttonParams()
+                  )
+
+                  val statsTitle = TextView(this).apply {
+                      text = "\n📊 ROUND STATISTICS"
+                      textSize = 21f
+                      setTextColor(Color.WHITE)
+                      gravity = Gravity.CENTER
+                      setPadding(0, 25, 0, 15)
+                  }
+
+                  root.addView(
+                      statsTitle,
+                      matchParams()
+                  )
+
+                  statistics = TextView(this).apply {
+                      text = "No completed rounds recorded."
+                      textSize = 16f
+                      setTextColor(Color.LTGRAY)
+                      gravity = Gravity.CENTER
+                      setPadding(10, 10, 10, 25)
+                  }
+
+                  root.addView(
+                      statistics,
+                      matchParams()
+                  )
+
+                  val historyTitle = TextView(this).apply {
+                      text = "📜 ROUND HISTORY"
+                      textSize = 21f
+                      setTextColor(Color.WHITE)
+                      gravity = Gravity.CENTER
+                      setPadding(0, 20, 0, 15)
+                  }
+
+                  root.addView(
+                      historyTitle,
+                      matchParams()
+                  )
+
+                  historyText = TextView(this).apply {
+                      text = "No history yet."
+                      textSize = 15f
+                      setTextColor(Color.LTGRAY)
+                      setPadding(10, 10, 10, 20)
+                  }
+
+                  root.addView(
+                      historyText,
+                      matchParams()
+                  )
+
+                  val clearButton = Button(this).apply {
+                      text = "🗑 CLEAR ROUND HISTORY"
+                      textSize = 15f
+
+                      setOnClickListener {
+                          clearHistory()
+                      }
+                  }
+
+                  root.addView(
+                      clearButton,
+                      buttonParams()
                   )
 
                   val warning = TextView(this).apply {
                       text =
-                          "\n⚠️ Experimental tool\n\n" +
-                          "This app cannot know the next Aviator result. " +
-                          "These estimates are not guaranteed predictions. " +
-                          "Use responsibly."
+                          "\n⚠️ IMPORTANT\n\n" +
+                          "Provably Fair verification checks completed " +
+                          "round data. It cannot reveal or predict a future " +
+                          "crash multiplier.\n\n" +
+                          "Never treat historical patterns as guaranteed " +
+                          "signals for gambling."
                       textSize = 14f
                       setTextColor(Color.LTGRAY)
                       gravity = Gravity.CENTER
-                      setPadding(10, 30, 10, 10)
+                      setPadding(10, 30, 10, 20)
                   }
 
-                  root.addView(warning)
+                  root.addView(
+                      warning,
+                      matchParams()
+                  )
 
                   scroll.addView(root)
 
                   setContentView(scroll)
+              }
+
+              private fun createInput(hint: String): EditText {
+
+                  return EditText(this).apply {
+                      this.hint = hint
+                      textSize = 16f
+                      setTextColor(Color.WHITE)
+                      setHintTextColor(Color.GRAY)
+                      setPadding(20, 15, 20, 15)
+
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          ViewGroup.LayoutParams.WRAP_CONTENT
+                      ).apply {
+                          setMargins(0, 8, 0, 8)
+                      }
+
+                      background =
+                          getDrawable(
+                              android.R.drawable.edit_text
+                          )
+                  }
+              }
+
+              private fun matchParams(): LinearLayout.LayoutParams {
+                  return LinearLayout.LayoutParams(
+                      ViewGroup.LayoutParams.MATCH_PARENT,
+                      ViewGroup.LayoutParams.WRAP_CONTENT
+                  )
+              }
+
+              private fun buttonParams(): LinearLayout.LayoutParams {
+                  return LinearLayout.LayoutParams(
+                      ViewGroup.LayoutParams.MATCH_PARENT,
+                      65
+                  ).apply {
+                      setMargins(0, 10, 0, 10)
+                  }
+              }
+
+              private fun verifyServerSeed() {
+
+                  val seed =
+                      serverSeed.text.toString().trim()
+
+                  val expected =
+                      expectedHash.text.toString()
+                          .trim()
+                          .lowercase(Locale.US)
+
+                  if (seed.isEmpty()) {
+                      showMessage(
+                          "Enter the revealed server seed."
+                      )
+                      return
+                  }
+
+                  if (expected.isEmpty()) {
+                      showMessage(
+                          "Enter the server seed SHA-256 hash."
+                      )
+                      return
+                  }
+
+                  if (expected.length != 64) {
+                      verificationResult.text =
+                          "❌ INVALID SHA-256\n\n" +
+                          "A SHA-256 hash must contain 64 hexadecimal characters."
+
+                      verificationResult.setTextColor(
+                          Color.RED
+                      )
+
+                      return
+                  }
+
+                  val calculated =
+                      sha256(seed)
+
+                  if (calculated == expected) {
+
+                      verificationResult.text =
+                          "✅ VERIFIED\n\n" +
+                          "The revealed server seed matches " +
+                          "the SHA-256 commitment."
+
+                      verificationResult.setTextColor(
+                          Color.GREEN
+                      )
+
+                  } else {
+
+                      verificationResult.text =
+                          "❌ NOT VERIFIED\n\n" +
+                          "The revealed server seed does not match " +
+                          "the supplied SHA-256 commitment."
+
+                      verificationResult.setTextColor(
+                          Color.RED
+                      )
+                  }
+              }
+
+              private fun sha256(input: String): String {
+
+                  val digest =
+                      MessageDigest.getInstance("SHA-256")
+
+                  val bytes =
+                      digest.digest(
+                          input.toByteArray(Charsets.UTF_8)
+                      )
+
+                  return bytes.joinToString("") {
+                      "%02x".format(it)
+                  }
+              }
+
+              private fun addRound() {
+
+                  val valueText =
+                      multiplierInput.text.toString().trim()
+
+                  if (valueText.isEmpty()) {
+                      showMessage(
+                          "Enter the completed multiplier first."
+                      )
+                      return
+                  }
+
+                  val value =
+                      valueText
+                          .replace("x", "", true)
+                          .toDoubleOrNull()
+
+                  if (value == null || value < 1.0) {
+                      showMessage(
+                          "Enter a valid multiplier such as 2.35."
+                      )
+                      return
+                  }
+
+                  val prefs =
+                      getSharedPreferences(
+                          prefsName,
+                          Context.MODE_PRIVATE
+                      )
+
+                  val current =
+                      prefs.getString(
+                          historyKey,
+                          ""
+                      ) ?: ""
+
+                  val newHistory =
+                      if (current.isEmpty()) {
+                          "%.2f".format(Locale.US, value)
+                      } else {
+                          current +
+                                  "," +
+                                  "%.2f".format(
+                                      Locale.US,
+                                      value
+                                  )
+                      }
+
+                  prefs.edit()
+                      .putString(
+                          historyKey,
+                          newHistory
+                      )
+                      .apply()
+
+                  multiplierInput.text.clear()
+
+                  updateHistory()
+
+                  showMessage(
+                      "Round added."
+                  )
+              }
+
+              private fun updateHistory() {
+
+                  val prefs =
+                      getSharedPreferences(
+                          prefsName,
+                          Context.MODE_PRIVATE
+                      )
+
+                  val stored =
+                      prefs.getString(
+                          historyKey,
+                          ""
+                      ) ?: ""
+
+                  if (stored.isEmpty()) {
+
+                      historyText.text =
+                          "No completed rounds recorded."
+
+                      statistics.text =
+                          "Rounds: 0\n\n" +
+                          "Add completed multipliers to begin analysis."
+
+                      return
+                  }
+
+                  val rounds =
+                      stored.split(",")
+                          .mapNotNull {
+                              it.toDoubleOrNull()
+                          }
+
+                  if (rounds.isEmpty()) {
+                      return
+                  }
+
+                  val total =
+                      rounds.sum()
+
+                  val average =
+                      total / rounds.size
+
+                  val low =
+                      rounds.count {
+                          it < 2.0
+                      }
+
+                  val medium =
+                      rounds.count {
+                          it >= 2.0 && it < 10.0
+                      }
+
+                  val high =
+                      rounds.count {
+                          it >= 10.0
+                      }
+
+                  val highest =
+                      rounds.maxOrNull() ?: 0.0
+
+                  val lowest =
+                      rounds.minOrNull() ?: 0.0
+
+                  statistics.text =
+                      "Rounds recorded: ${rounds.size}\n\n" +
+                      "Average: %.2fx\n".format(
+                          Locale.US,
+                          average
+                      ) +
+                      "Lowest: %.2fx\n".format(
+                          Locale.US,
+                          lowest
+                      ) +
+                      "Highest: %.2fx\n\n".format(
+                          Locale.US,
+                          highest
+                      ) +
+                      "Below 2.00x: $low\n" +
+                      "2.00x – 9.99x: $medium\n" +
+                      "10.00x+: $high"
+
+                  val display =
+                      rounds
+                          .takeLast(100)
+                          .reversed()
+                          .mapIndexed { index, number ->
+                              "${index + 1}. " +
+                                      "%.2fx".format(
+                                          Locale.US,
+                                          number
+                                      )
+                          }
+                          .joinToString("\n")
+
+                  historyText.text =
+                      display
+              }
+
+              private fun clearHistory() {
+
+                  getSharedPreferences(
+                      prefsName,
+                      Context.MODE_PRIVATE
+                  )
+                      .edit()
+                      .remove(historyKey)
+                      .apply()
+
+                  updateHistory()
+
+                  verificationResult.text =
+                      "Verification waiting..."
+
+                  verificationResult.setTextColor(
+                      Color.WHITE
+                  )
+
+                  showMessage(
+                      "Round history cleared."
+                  )
+              }
+
+              private fun showMessage(message: String) {
+
+                  Toast.makeText(
+                      this,
+                      message,
+                      Toast.LENGTH_SHORT
+                  ).show()
               }
           }
           EOF
@@ -314,7 +737,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: AviatorX-Predictor-APK
+          name: AviatorX-Predictor-V2-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
