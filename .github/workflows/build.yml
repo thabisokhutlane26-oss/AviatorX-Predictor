@@ -38,14 +38,16 @@ jobs:
           set -e
 
           rm -rf app
+
           mkdir -p app/src/main/java/com/aviatorx/predictor
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/drawable
-          mkdir -p app/src/main/res/mipmap-hdpi
-          mkdir -p app/src/main/res/mipmap-mdpi
-          mkdir -p app/src/main/res/mipmap-xhdpi
-          mkdir -p app/src/main/res/mipmap-xxhdpi
-          mkdir -p app/src/main/res/mipmap-xxxhdpi
+
+          cat > gradle.properties <<'EOF'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          EOF
 
           cat > settings.gradle <<'EOF'
           pluginManagement {
@@ -213,16 +215,8 @@ jobs:
           import android.content.Context
           import android.graphics.Color
           import android.os.Bundle
-          import android.view.Gravity
           import android.view.ViewGroup
-          import android.widget.Button
-          import android.widget.EditText
-          import android.widget.LinearLayout
-          import android.widget.ScrollView
-          import android.widget.Spinner
-          import android.widget.ArrayAdapter
-          import android.widget.TextView
-          import android.widget.Toast
+          import android.widget.*
           import androidx.appcompat.app.AppCompatActivity
           import java.security.MessageDigest
           import java.util.Locale
@@ -250,23 +244,24 @@ jobs:
                   refreshDashboard()
               }
 
-              private fun dp(value: Int): Int {
-                  return (value * resources.displayMetrics.density).toInt()
-              }
+              private fun dp(value: Int): Int =
+                  (value * resources.displayMetrics.density).toInt()
 
               private fun textView(
-                  text: String,
+                  value: String,
                   size: Float,
                   bold: Boolean = false
               ): TextView {
-
                   return TextView(this).apply {
-                      this.text = text
+                      text = value
                       textSize = size
                       setTextColor(Color.WHITE)
 
                       if (bold) {
-                          setTypeface(null, android.graphics.Typeface.BOLD)
+                          setTypeface(
+                              null,
+                              android.graphics.Typeface.BOLD
+                          )
                       }
 
                       setPadding(
@@ -279,16 +274,19 @@ jobs:
               }
 
               private fun card(): LinearLayout {
-
                   return LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
+
                       setPadding(
                           dp(16),
                           dp(16),
                           dp(16),
                           dp(16)
                       )
-                      setBackgroundResource(com.aviatorx.predictor.R.drawable.card_background)
+
+                      setBackgroundResource(
+                          R.drawable.card_background
+                      )
 
                       val params = LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT,
@@ -312,12 +310,14 @@ jobs:
 
                   val root = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
+
                       setPadding(
                           dp(10),
                           dp(10),
                           dp(10),
                           dp(20)
                       )
+
                       setBackgroundColor(
                           Color.rgb(9, 11, 16)
                       )
@@ -339,13 +339,13 @@ jobs:
 
                   header.addView(title)
 
-                  val subtitle = textView(
-                      "PROFESSIONAL ANALYTICS • V3.0",
-                      13f,
-                      true
+                  header.addView(
+                      textView(
+                          "PROFESSIONAL ANALYTICS • V3.0",
+                          13f,
+                          true
+                      )
                   )
-
-                  header.addView(subtitle)
 
                   statusText = textView(
                       "● SYSTEM READY",
@@ -382,12 +382,9 @@ jobs:
                       )
                   )
 
-                  statsText = textView(
-                      "",
-                      15f
-                  )
-
+                  statsText = textView("", 15f)
                   overview.addView(statsText)
+
                   root.addView(overview)
 
                   val entryCard = card()
@@ -410,12 +407,16 @@ jobs:
                   roundInput = EditText(this).apply {
                       hint = "Example: 2.45"
                       setTextColor(Color.WHITE)
-                      setHintTextColor(Color.rgb(154, 164, 178))
+                      setHintTextColor(
+                          Color.rgb(154, 164, 178)
+                      )
+
                       inputType =
                           android.text.InputType.TYPE_CLASS_NUMBER or
                           android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+
                       setBackgroundResource(
-                          com.aviatorx.predictor.R.drawable.input_background
+                          R.drawable.input_background
                       )
                   }
 
@@ -439,9 +440,14 @@ jobs:
                   val addButton = Button(this).apply {
                       text = "ADD COMPLETED ROUND"
                       setTextColor(Color.BLACK)
-                      setTypeface(null, android.graphics.Typeface.BOLD)
+
+                      setTypeface(
+                          null,
+                          android.graphics.Typeface.BOLD
+                      )
+
                       setBackgroundResource(
-                          com.aviatorx.predictor.R.drawable.button_background
+                          R.drawable.button_background
                       )
 
                       setOnClickListener {
@@ -453,7 +459,6 @@ jobs:
 
                   val clearButton = Button(this).apply {
                       text = "CLEAR HISTORY"
-                      setTextColor(Color.WHITE)
 
                       setOnClickListener {
                           clearHistory()
@@ -506,24 +511,23 @@ jobs:
                       )
                   )
 
-                  analyticsText = textView(
-                      "",
-                      14f
+                  analyticsText = textView("", 14f)
+
+                  analyticsCard.addView(
+                      analyticsText
                   )
 
-                  analyticsCard.addView(analyticsText)
-
                   windowSpinner.onItemSelectedListener =
-                      object : android.widget.AdapterView.OnItemSelectedListener {
+                      object : AdapterView.OnItemSelectedListener {
 
                           override fun onNothingSelected(
-                              parent: android.widget.AdapterView<*>?
+                              parent: AdapterView<*>?
                           ) {
                               refreshDashboard()
                           }
 
                           override fun onItemSelected(
-                              parent: android.widget.AdapterView<*>?,
+                              parent: AdapterView<*>?,
                               view: android.view.View?,
                               position: Int,
                               id: Long
@@ -573,9 +577,11 @@ jobs:
                   val serverSeedInput = EditText(this).apply {
                       hint = "Server seed"
                       setTextColor(Color.WHITE)
-                      setHintTextColor(Color.rgb(154, 164, 178))
+                      setHintTextColor(
+                          Color.rgb(154, 164, 178)
+                      )
                       setBackgroundResource(
-                          com.aviatorx.predictor.R.drawable.input_background
+                          R.drawable.input_background
                       )
                   }
 
@@ -584,26 +590,32 @@ jobs:
                   val expectedHashInput = EditText(this).apply {
                       hint = "Expected SHA-256 hash"
                       setTextColor(Color.WHITE)
-                      setHintTextColor(Color.rgb(154, 164, 178))
+                      setHintTextColor(
+                          Color.rgb(154, 164, 178)
+                      )
                       setBackgroundResource(
-                          com.aviatorx.predictor.R.drawable.input_background
+                          R.drawable.input_background
                       )
                   }
 
                   fairCard.addView(expectedHashInput)
 
                   val verifyButton = Button(this).apply {
+
                       text = "VERIFY SHA-256"
+
                       setOnClickListener {
 
-                          val seed = serverSeedInput.text
-                              .toString()
-                              .trim()
+                          val seed =
+                              serverSeedInput.text
+                                  .toString()
+                                  .trim()
 
-                          val expected = expectedHashInput.text
-                              .toString()
-                              .trim()
-                              .lowercase(Locale.US)
+                          val expected =
+                              expectedHashInput.text
+                                  .toString()
+                                  .trim()
+                                  .lowercase(Locale.US)
 
                           if (seed.isEmpty()) {
                               Toast.makeText(
@@ -645,6 +657,7 @@ jobs:
                   }
 
                   fairCard.addView(verifyButton)
+
                   root.addView(fairCard)
 
                   val warningCard = card()
@@ -672,17 +685,19 @@ jobs:
 
               private fun addRound() {
 
-                  val valueText = roundInput.text
-                      .toString()
-                      .trim()
+                  val valueText =
+                      roundInput.text
+                          .toString()
+                          .trim()
 
-                  val value = valueText.toDoubleOrNull()
+                  val value =
+                      valueText.toDoubleOrNull()
 
-                  if (value == null ||
+                  if (
+                      value == null ||
                       value < 1.0 ||
                       value > 1_000_000.0
                   ) {
-
                       Toast.makeText(
                           this,
                           "Enter a valid multiplier from 1.00 to 1,000,000.",
@@ -726,9 +741,14 @@ jobs:
                       return
                   }
 
-                  val average = rounds.average()
-                  val lowest = rounds.minOrNull() ?: 0.0
-                  val highest = rounds.maxOrNull() ?: 0.0
+                  val average =
+                      rounds.average()
+
+                  val lowest =
+                      rounds.minOrNull() ?: 0.0
+
+                  val highest =
+                      rounds.maxOrNull() ?: 0.0
 
                   statsText.text =
                       "Rounds recorded: $count\n" +
@@ -744,16 +764,17 @@ jobs:
                           else -> 100
                       }
 
-                  val data = rounds.takeLast(requestedWindow)
+                  val data =
+                      rounds.takeLast(requestedWindow)
 
                   analyticsText.text =
                       calculateAnalytics(data)
 
-                  val recent = rounds
-                      .takeLast(20)
-                      .reversed()
+                  val recent =
+                      rounds.takeLast(20).reversed()
 
-                  val builder = StringBuilder()
+                  val builder =
+                      StringBuilder()
 
                   recent.forEachIndexed { index, value ->
 
@@ -766,7 +787,8 @@ jobs:
                       }
                   }
 
-                  historyText.text = builder.toString()
+                  historyText.text =
+                      builder.toString()
 
                   statusText.text =
                       "● SYSTEM READY • ${count} ROUNDS LOADED"
@@ -780,9 +802,11 @@ jobs:
                       return "No data available."
                   }
 
-                  val average = data.average()
+                  val average =
+                      data.average()
 
-                  val sorted = data.sorted()
+                  val sorted =
+                      data.sorted()
 
                   val median =
                       if (sorted.size % 2 == 0) {
@@ -796,11 +820,14 @@ jobs:
 
                   val variance =
                       data.map {
-                          val difference = it - average
+                          val difference =
+                              it - average
+
                           difference * difference
                       }.average()
 
-                  val volatility = sqrt(variance)
+                  val volatility =
+                      sqrt(variance)
 
                   val under120 =
                       data.count { it < 1.20 }
@@ -825,7 +852,9 @@ jobs:
                           it >= 10.0
                       }
 
-                  fun percentage(value: Int): String {
+                  fun percentage(
+                      value: Int
+                  ): String {
                       return String.format(
                           Locale.US,
                           "%.1f%%",
@@ -848,16 +877,16 @@ jobs:
                       )
 
                       append(
-                          "Volatility: ${String.format(
-                              Locale.US,
-                              "%.2f",
-                              volatility
-                          )}\n\n"
+                          "Volatility: ${
+                              String.format(
+                                  Locale.US,
+                                  "%.2f",
+                                  volatility
+                              )
+                          }\n\n"
                       )
 
-                      append(
-                          "Distribution\n"
-                      )
+                      append("Distribution\n")
 
                       append(
                           "< 1.20x: ${percentage(under120)}\n"
@@ -880,7 +909,8 @@ jobs:
                       )
 
                       append(
-                          "\nHistorical analysis only — not a guaranteed prediction."
+                          "\nHistorical analysis only — " +
+                          "not a guaranteed prediction."
                       )
                   }
               }
@@ -901,7 +931,9 @@ jobs:
               ): String {
 
                   val digest =
-                      MessageDigest.getInstance("SHA-256")
+                      MessageDigest.getInstance(
+                          "SHA-256"
+                      )
 
                   val bytes =
                       digest.digest(
@@ -939,11 +971,10 @@ jobs:
                           prefsName,
                           Context.MODE_PRIVATE
                       )
-                          .getString(
-                              roundsKey,
-                              ""
-                          )
-                          ?: ""
+                      .getString(
+                          roundsKey,
+                          ""
+                      ) ?: ""
 
                   if (saved.isEmpty()) {
                       return
@@ -954,7 +985,8 @@ jobs:
                       val value =
                           item.toDoubleOrNull()
 
-                      if (value != null &&
+                      if (
+                          value != null &&
                           value >= 1.0
                       ) {
                           rounds.add(value)
