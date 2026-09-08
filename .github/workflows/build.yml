@@ -39,11 +39,7 @@ jobs:
 
           mkdir -p app/src/main/java/com/aviatorx/predictor
           mkdir -p app/src/main/res/drawable
-          mkdir -p app/src/main/res/mipmap-hdpi
-          mkdir -p app/src/main/res/mipmap-mdpi
-          mkdir -p app/src/main/res/mipmap-xhdpi
-          mkdir -p app/src/main/res/mipmap-xxhdpi
-          mkdir -p app/src/main/res/mipmap-xxxhdpi
+          mkdir -p app/src/main/res/values
 
           cat > settings.gradle <<'EOF'
           pluginManagement {
@@ -98,6 +94,15 @@ jobs:
                   versionCode 30
                   versionName '3.0'
               }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+
+              kotlinOptions {
+                  jvmTarget = '17'
+              }
           }
 
           dependencies {
@@ -132,8 +137,6 @@ jobs:
 
           </manifest>
           EOF
-
-          mkdir -p app/src/main/res/values
 
           cat > app/src/main/res/values/styles.xml <<'EOF'
           <resources>
@@ -201,12 +204,10 @@ jobs:
           import android.os.Bundle
           import android.graphics.Color
           import android.graphics.Typeface
-          import android.view.Gravity
           import android.view.ViewGroup
           import android.widget.*
           import java.security.MessageDigest
           import java.util.Locale
-          import kotlin.math.round
 
           class MainActivity : Activity() {
 
@@ -238,9 +239,10 @@ jobs:
                   bold: Boolean = false
               ): TextView {
                   return TextView(this).apply {
-                      this.text = value
+                      text = value
                       textSize = size
                       setTextColor(Color.WHITE)
+
                       if (bold) {
                           typeface = Typeface.DEFAULT_BOLD
                       }
@@ -250,17 +252,32 @@ jobs:
               private fun card(): LinearLayout {
                   return LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setPadding(dp(16), dp(16), dp(16), dp(16))
-                      background = resources.getDrawable(
-                          com.aviatorx.predictor.R.drawable.card,
-                          theme
+
+                      setPadding(
+                          dp(16),
+                          dp(16),
+                          dp(16),
+                          dp(16)
                       )
-                      layoutParams = LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT,
-                          ViewGroup.LayoutParams.WRAP_CONTENT
-                      ).apply {
-                          setMargins(0, dp(7), 0, dp(7))
-                      }
+
+                      background =
+                          resources.getDrawable(
+                              R.drawable.card,
+                              theme
+                          )
+
+                      layoutParams =
+                          LinearLayout.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT,
+                              ViewGroup.LayoutParams.WRAP_CONTENT
+                          ).apply {
+                              setMargins(
+                                  0,
+                                  dp(7),
+                                  0,
+                                  dp(7)
+                              )
+                          }
                   }
               }
 
@@ -269,7 +286,12 @@ jobs:
                   val root = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       setBackgroundColor(Color.rgb(7, 7, 7))
-                      setPadding(dp(16), dp(14), dp(16), dp(20))
+                      setPadding(
+                          dp(16),
+                          dp(14),
+                          dp(16),
+                          dp(20)
+                      )
                   }
 
                   val scroll = ScrollView(this)
@@ -278,47 +300,79 @@ jobs:
                       orientation = LinearLayout.VERTICAL
                   }
 
-                  val header = text(
-                      "✈ AVIATORX AI",
-                      28f,
-                      true
+                  val header =
+                      text(
+                          "✈ AVIATORX AI",
+                          28f,
+                          true
+                      )
+
+                  header.setTextColor(
+                      Color.rgb(255, 212, 0)
                   )
 
-                  header.setTextColor(Color.rgb(255, 212, 0))
                   content.addView(header)
 
-                  val subtitle = text(
-                      "PROFESSIONAL ANALYTICS • V3.0",
-                      12f,
-                      true
-                  )
+                  val subtitle =
+                      text(
+                          "PROFESSIONAL ANALYTICS • V3.0",
+                          12f,
+                          true
+                      )
+
                   subtitle.setTextColor(Color.LTGRAY)
+
                   content.addView(subtitle)
 
-                  val status = text(
-                      "●  SYSTEM READY\nHistorical-data analysis mode",
-                      14f,
-                      true
+                  val status =
+                      text(
+                          "● SYSTEM READY\nHistorical-data analysis mode",
+                          14f,
+                          true
+                      )
+
+                  status.setTextColor(
+                      Color.rgb(100, 255, 130)
                   )
-                  status.setTextColor(Color.rgb(100, 255, 130))
-                  status.setPadding(0, dp(12), 0, dp(12))
+
+                  status.setPadding(
+                      0,
+                      dp(12),
+                      0,
+                      dp(12)
+                  )
+
                   content.addView(status)
 
-                  val owner = text(
-                      "Made by Thabiso Khutlane",
-                      12f
-                  )
+                  val owner =
+                      text(
+                          "Made by Thabiso Khutlane",
+                          12f
+                      )
+
                   owner.setTextColor(Color.GRAY)
+
                   content.addView(owner)
 
                   val overview = card()
 
                   overview.addView(
-                      text("PERFORMANCE OVERVIEW", 16f, true)
+                      text(
+                          "PERFORMANCE OVERVIEW",
+                          16f,
+                          true
+                      )
                   )
 
                   statsText = text("", 15f)
-                  statsText.setPadding(0, dp(12), 0, 0)
+
+                  statsText.setPadding(
+                      0,
+                      dp(12),
+                      0,
+                      0
+                  )
+
                   overview.addView(statsText)
 
                   content.addView(overview)
@@ -326,27 +380,42 @@ jobs:
                   val inputCard = card()
 
                   inputCard.addView(
-                      text("ADD COMPLETED ROUND", 16f, true)
+                      text(
+                          "ADD COMPLETED ROUND",
+                          16f,
+                          true
+                      )
                   )
 
-                  val hint = text(
-                      "Enter a completed multiplier only, e.g. 1.42",
-                      12f
-                  )
+                  val hint =
+                      text(
+                          "Enter a completed multiplier only, e.g. 1.42",
+                          12f
+                      )
+
                   hint.setTextColor(Color.GRAY)
+
                   inputCard.addView(hint)
 
-                  roundInput = EditText(this).apply {
-                      hint = "Multiplier"
-                      setHintTextColor(Color.GRAY)
-                      setTextColor(Color.WHITE)
-                      textSize = 16f
-                      inputType = 2 or 8192
-                      background = resources.getDrawable(
-                          R.drawable.input,
-                          theme
-                      )
-                  }
+                  roundInput =
+                      EditText(this).apply {
+
+                          hint = "Multiplier"
+
+                          setHintTextColor(Color.GRAY)
+                          setTextColor(Color.WHITE)
+
+                          textSize = 16f
+
+                          inputType =
+                              2 or 8192
+
+                          background =
+                              resources.getDrawable(
+                                  R.drawable.input,
+                                  theme
+                              )
+                      }
 
                   inputCard.addView(
                       roundInput,
@@ -354,22 +423,35 @@ jobs:
                           ViewGroup.LayoutParams.MATCH_PARENT,
                           dp(55)
                       ).apply {
-                          setMargins(0, dp(10), 0, dp(10))
+                          setMargins(
+                              0,
+                              dp(10),
+                              0,
+                              dp(10)
+                          )
                       }
                   )
 
-                  val addButton = Button(this).apply {
-                      text = "ADD ROUND"
-                      setTextColor(Color.BLACK)
-                      typeface = Typeface.DEFAULT_BOLD
-                      background = resources.getDrawable(
-                          R.drawable.button,
-                          theme
-                      )
-                      setOnClickListener {
-                          addRound()
+                  val addButton =
+                      Button(this).apply {
+
+                          text = "ADD ROUND"
+
+                          setTextColor(Color.BLACK)
+
+                          typeface =
+                              Typeface.DEFAULT_BOLD
+
+                          background =
+                              resources.getDrawable(
+                                  R.drawable.button,
+                                  theme
+                              )
+
+                          setOnClickListener {
+                              addRound()
+                          }
                       }
-                  }
 
                   inputCard.addView(
                       addButton,
@@ -384,35 +466,75 @@ jobs:
                   val analysisCard = card()
 
                   analysisCard.addView(
-                      text("ADVANCED ANALYTICS", 16f, true)
+                      text(
+                          "ADVANCED ANALYTICS",
+                          16f,
+                          true
+                      )
                   )
 
-                  analysisText = text("", 14f)
-                  analysisText.setPadding(0, dp(12), 0, 0)
-                  analysisCard.addView(analysisText)
+                  analysisText =
+                      text("", 14f)
 
-                  content.addView(analysisCard)
+                  analysisText.setPadding(
+                      0,
+                      dp(12),
+                      0,
+                      0
+                  )
+
+                  analysisCard.addView(
+                      analysisText
+                  )
+
+                  content.addView(
+                      analysisCard
+                  )
 
                   val historyCard = card()
 
                   historyCard.addView(
-                      text("RECENT ROUNDS", 16f, true)
+                      text(
+                          "RECENT ROUNDS",
+                          16f,
+                          true
+                      )
                   )
 
-                  historyText = text("", 14f)
-                  historyText.setPadding(0, dp(10), 0, 0)
-                  historyCard.addView(historyText)
+                  historyText =
+                      text("", 14f)
 
-                  val clearButton = Button(this).apply {
-                      text = "CLEAR HISTORY"
-                      setTextColor(Color.WHITE)
-                      setBackgroundColor(Color.rgb(55, 55, 55))
-                      setOnClickListener {
-                          rounds.clear()
-                          saveRounds()
-                          refresh()
+                  historyText.setPadding(
+                      0,
+                      dp(10),
+                      0,
+                      0
+                  )
+
+                  historyCard.addView(
+                      historyText
+                  )
+
+                  val clearButton =
+                      Button(this).apply {
+
+                          text = "CLEAR HISTORY"
+
+                          setTextColor(Color.WHITE)
+
+                          setBackgroundColor(
+                              Color.rgb(55, 55, 55)
+                          )
+
+                          setOnClickListener {
+
+                              rounds.clear()
+
+                              saveRounds()
+
+                              refresh()
+                          }
                       }
-                  }
 
                   historyCard.addView(
                       clearButton,
@@ -420,39 +542,74 @@ jobs:
                           ViewGroup.LayoutParams.MATCH_PARENT,
                           dp(50)
                       ).apply {
-                          setMargins(0, dp(14), 0, 0)
+                          setMargins(
+                              0,
+                              dp(14),
+                              0,
+                              0
+                          )
                       }
                   )
 
-                  content.addView(historyCard)
+                  content.addView(
+                      historyCard
+                  )
 
                   val fairCard = card()
 
                   fairCard.addView(
-                      text("PROVABLY FAIR VERIFIER", 16f, true)
+                      text(
+                          "PROVABLY FAIR VERIFIER",
+                          16f,
+                          true
+                      )
                   )
 
-                  val serverInput = EditText(this).apply {
-                      hint = "Revealed server seed"
-                      setHintTextColor(Color.GRAY)
-                      setTextColor(Color.WHITE)
-                      textSize = 14f
-                      background = resources.getDrawable(
-                          R.drawable.input,
-                          theme
-                      )
-                  }
+                  val serverInput =
+                      EditText(this).apply {
 
-                  val hashInput = EditText(this).apply {
-                      hint = "Server seed SHA-256"
-                      setHintTextColor(Color.GRAY)
-                      setTextColor(Color.WHITE)
-                      textSize = 14f
-                      background = resources.getDrawable(
-                          R.drawable.input,
-                          theme
-                      )
-                  }
+                          hint =
+                              "Revealed server seed"
+
+                          setHintTextColor(
+                              Color.GRAY
+                          )
+
+                          setTextColor(
+                              Color.WHITE
+                          )
+
+                          textSize = 14f
+
+                          background =
+                              resources.getDrawable(
+                                  R.drawable.input,
+                                  theme
+                              )
+                      }
+
+                  val hashInput =
+                      EditText(this).apply {
+
+                          hint =
+                              "Server seed SHA-256"
+
+                          setHintTextColor(
+                              Color.GRAY
+                          )
+
+                          setTextColor(
+                              Color.WHITE
+                          )
+
+                          textSize = 14f
+
+                          background =
+                              resources.getDrawable(
+                                  R.drawable.input,
+                                  theme
+                              )
+                      }
 
                   fairCard.addView(
                       serverInput,
@@ -460,7 +617,12 @@ jobs:
                           ViewGroup.LayoutParams.MATCH_PARENT,
                           dp(55)
                       ).apply {
-                          setMargins(0, dp(10), 0, dp(8))
+                          setMargins(
+                              0,
+                              dp(10),
+                              0,
+                              dp(8)
+                          )
                       }
                   )
 
@@ -470,68 +632,96 @@ jobs:
                           ViewGroup.LayoutParams.MATCH_PARENT,
                           dp(55)
                       ).apply {
-                          setMargins(0, 0, 0, dp(10))
+                          setMargins(
+                              0,
+                              0,
+                              0,
+                              dp(10)
+                          )
                       }
                   )
 
-                  val verifyButton = Button(this).apply {
-                      text = "VERIFY SHA-256"
-                      setTextColor(Color.BLACK)
-                      typeface = Typeface.DEFAULT_BOLD
-                      background = resources.getDrawable(
-                          R.drawable.button,
-                          theme
-                      )
+                  val verifyButton =
+                      Button(this).apply {
 
-                      setOnClickListener {
+                          text =
+                              "VERIFY SHA-256"
 
-                          val serverSeed =
-                              serverInput.text.toString().trim()
+                          setTextColor(Color.BLACK)
 
-                          val expectedHash =
-                              hashInput.text.toString().trim()
-                                  .lowercase(Locale.US)
+                          typeface =
+                              Typeface.DEFAULT_BOLD
 
-                          if (serverSeed.isEmpty() ||
-                              expectedHash.isEmpty()
-                          ) {
-                              Toast.makeText(
-                                  this@MainActivity,
-                                  "Enter both values",
-                                  Toast.LENGTH_SHORT
-                              ).show()
-                              return@setOnClickListener
-                          }
-
-                          val actualHash =
-                              sha256(serverSeed)
-
-                          if (expectedHash.length != 64 ||
-                              !expectedHash.matches(
-                                  Regex("[0-9a-f]{64}")
+                          background =
+                              resources.getDrawable(
+                                  R.drawable.button,
+                                  theme
                               )
-                          ) {
+
+                          setOnClickListener {
+
+                              val serverSeed =
+                                  serverInput.text
+                                      .toString()
+                                      .trim()
+
+                              val expectedHash =
+                                  hashInput.text
+                                      .toString()
+                                      .trim()
+                                      .lowercase(
+                                          Locale.US
+                                      )
+
+                              if (
+                                  serverSeed.isEmpty() ||
+                                  expectedHash.isEmpty()
+                              ) {
+
+                                  Toast.makeText(
+                                      this@MainActivity,
+                                      "Enter both values",
+                                      Toast.LENGTH_SHORT
+                                  ).show()
+
+                                  return@setOnClickListener
+                              }
+
+                              val actualHash =
+                                  sha256(serverSeed)
+
+                              if (
+                                  expectedHash.length != 64 ||
+                                  !expectedHash.matches(
+                                      Regex(
+                                          "[0-9a-f]{64}"
+                                      )
+                                  )
+                              ) {
+
+                                  Toast.makeText(
+                                      this@MainActivity,
+                                      "Hash must contain 64 hexadecimal characters",
+                                      Toast.LENGTH_LONG
+                                  ).show()
+
+                                  return@setOnClickListener
+                              }
+
+                              val verified =
+                                  actualHash ==
+                                      expectedHash
+
                               Toast.makeText(
                                   this@MainActivity,
-                                  "Hash must contain 64 hexadecimal characters",
+                                  if (verified)
+                                      "✓ VERIFIED — SHA-256 matches"
+                                  else
+                                      "✕ NOT VERIFIED — Hash does not match",
                                   Toast.LENGTH_LONG
                               ).show()
-                              return@setOnClickListener
                           }
-
-                          val verified =
-                              actualHash == expectedHash
-
-                          Toast.makeText(
-                              this@MainActivity,
-                              if (verified)
-                                  "✓ VERIFIED — SHA-256 matches"
-                              else
-                                  "✕ NOT VERIFIED — Hash does not match",
-                              Toast.LENGTH_LONG
-                          ).show()
                       }
-                  }
 
                   fairCard.addView(
                       verifyButton,
@@ -541,41 +731,85 @@ jobs:
                       )
                   )
 
-                  val fairInfo = text(
-                      "\nA SHA-256 commitment can be checked against a revealed server seed after the round. Verification confirms the commitment; it does not predict future results.",
-                      12f
-                  )
-                  fairInfo.setTextColor(Color.GRAY)
-                  fairCard.addView(fairInfo)
+                  val fairInfo =
+                      text(
+                          "\nA SHA-256 commitment can be checked against a revealed server seed after the round. Verification confirms the commitment; it does not predict future results.",
+                          12f
+                      )
 
-                  content.addView(fairCard)
+                  fairInfo.setTextColor(
+                      Color.GRAY
+                  )
+
+                  fairCard.addView(
+                      fairInfo
+                  )
+
+                  content.addView(
+                      fairCard
+                  )
 
                   val warning = card()
 
                   val warningTitle =
-                      text("RESPONSIBLE USE", 16f, true)
-                  warningTitle.setTextColor(Color.rgb(255, 212, 0))
-                  warning.addView(warningTitle)
+                      text(
+                          "RESPONSIBLE USE",
+                          16f,
+                          true
+                      )
 
-                  val warningText = text(
-                      "AviatorX AI analyses historical data. Historical statistics cannot guarantee or predict the next game outcome. Never treat analytics as a guaranteed betting signal.",
-                      13f
+                  warningTitle.setTextColor(
+                      Color.rgb(255, 212, 0)
                   )
-                  warningText.setTextColor(Color.LTGRAY)
-                  warningText.setPadding(0, dp(10), 0, 0)
-                  warning.addView(warningText)
 
-                  content.addView(warning)
-
-                  val footer = text(
-                      "\nAVIATORX AI V3.0\nAnalytics • Verification • History",
-                      11f
+                  warning.addView(
+                      warningTitle
                   )
-                  footer.gravity = Gravity.CENTER
-                  footer.setTextColor(Color.GRAY)
-                  content.addView(footer)
+
+                  val warningText =
+                      text(
+                          "AviatorX AI analyses historical data. Historical statistics cannot guarantee or predict the next game outcome. Never treat analytics as a guaranteed betting signal.",
+                          13f
+                      )
+
+                  warningText.setTextColor(
+                      Color.LTGRAY
+                  )
+
+                  warningText.setPadding(
+                      0,
+                      dp(10),
+                      0,
+                      0
+                  )
+
+                  warning.addView(
+                      warningText
+                  )
+
+                  content.addView(
+                      warning
+                  )
+
+                  val footer =
+                      text(
+                          "\nAVIATORX AI V3.0\nAnalytics • Verification • History",
+                          11f
+                      )
+
+                  footer.gravity =
+                      android.view.Gravity.CENTER
+
+                  footer.setTextColor(
+                      Color.GRAY
+                  )
+
+                  content.addView(
+                      footer
+                  )
 
                   scroll.addView(content)
+
                   root.addView(
                       scroll,
                       LinearLayout.LayoutParams(
@@ -589,26 +823,35 @@ jobs:
 
               private fun addRound() {
 
-                  val value = roundInput.text.toString()
-                      .trim()
-                      .replace(",", ".")
-                      .toDoubleOrNull()
+                  val value =
+                      roundInput.text
+                          .toString()
+                          .trim()
+                          .replace(",", ".")
+                          .toDoubleOrNull()
 
-                  if (value == null || value < 1.0) {
+                  if (
+                      value == null ||
+                      value < 1.0
+                  ) {
+
                       Toast.makeText(
                           this,
                           "Enter a valid multiplier of 1.00 or higher",
                           Toast.LENGTH_SHORT
                       ).show()
+
                       return
                   }
 
                   if (value > 1000000.0) {
+
                       Toast.makeText(
                           this,
                           "Multiplier is too large",
                           Toast.LENGTH_SHORT
                       ).show()
+
                       return
                   }
 
@@ -648,7 +891,8 @@ jobs:
                       return
                   }
 
-                  val sorted = rounds.sorted()
+                  val sorted =
+                      rounds.sorted()
 
                   val average =
                       rounds.average()
@@ -656,15 +900,24 @@ jobs:
                   val median =
                       if (sorted.size % 2 == 0) {
                           (
-                              sorted[sorted.size / 2 - 1] +
-                              sorted[sorted.size / 2]
+                              sorted[
+                                  sorted.size / 2 - 1
+                              ] +
+                              sorted[
+                                  sorted.size / 2
+                              ]
                           ) / 2.0
                       } else {
-                          sorted[sorted.size / 2]
+                          sorted[
+                              sorted.size / 2
+                          ]
                       }
 
-                  val lowest = sorted.first()
-                  val highest = sorted.last()
+                  val lowest =
+                      sorted.first()
+
+                  val highest =
+                      sorted.last()
 
                   statsText.text =
                       "Rounds: ${rounds.size}\n" +
@@ -677,28 +930,39 @@ jobs:
                       buildAnalysis()
 
                   val recent =
-                      rounds.takeLast(20).asReversed()
+                      rounds
+                          .takeLast(20)
+                          .asReversed()
 
                   historyText.text =
-                      recent.mapIndexed { index, value ->
-                          "#${recent.size - index}   ${format(value)}x"
-                      }.joinToString("\n")
-
+                      recent
+                          .mapIndexed { index, value ->
+                              "#${recent.size - index}   ${format(value)}x"
+                          }
+                          .joinToString("\n")
               }
 
               private fun buildAnalysis(): String {
 
                   val windows =
-                      listOf(10, 25, 50, 100)
+                      listOf(
+                          10,
+                          25,
+                          50,
+                          100
+                      )
 
-                  val builder = StringBuilder()
+                  val builder =
+                      StringBuilder()
 
                   for (window in windows) {
 
                       if (rounds.size < window) {
+
                           builder.append(
                               "Last $window rounds: insufficient data\n"
                           )
+
                           continue
                       }
 
@@ -709,25 +973,32 @@ jobs:
                           data.average()
 
                       val below120 =
-                          data.count { it < 1.20 }
+                          data.count {
+                              it < 1.20
+                          }
 
                       val between120and2 =
                           data.count {
-                              it >= 1.20 && it < 2.0
+                              it >= 1.20 &&
+                              it < 2.0
                           }
 
                       val between2and5 =
                           data.count {
-                              it >= 2.0 && it < 5.0
+                              it >= 2.0 &&
+                              it < 5.0
                           }
 
                       val between5and10 =
                           data.count {
-                              it >= 5.0 && it < 10.0
+                              it >= 5.0 &&
+                              it < 10.0
                           }
 
                       val above10 =
-                          data.count { it >= 10.0 }
+                          data.count {
+                              it >= 10.0
+                          }
 
                       builder.append(
                           "LAST $window ROUNDS\n"
@@ -738,23 +1009,28 @@ jobs:
                       )
 
                       builder.append(
-                          "<1.20x: ${percentage(below120, window)}%\n"
+                          "<1.20x: " +
+                          "${percentage(below120, window)}%\n"
                       )
 
                       builder.append(
-                          "1.20–2x: ${percentage(between120and2, window)}%\n"
+                          "1.20–2x: " +
+                          "${percentage(between120and2, window)}%\n"
                       )
 
                       builder.append(
-                          "2–5x: ${percentage(between2and5, window)}%\n"
+                          "2–5x: " +
+                          "${percentage(between2and5, window)}%\n"
                       )
 
                       builder.append(
-                          "5–10x: ${percentage(between5and10, window)}%\n"
+                          "5–10x: " +
+                          "${percentage(between5and10, window)}%\n"
                       )
 
                       builder.append(
-                          "10x+: ${percentage(above10, window)}%\n\n"
+                          "10x+: " +
+                          "${percentage(above10, window)}%\n\n"
                       )
                   }
 
@@ -778,17 +1054,19 @@ jobs:
                   total: Int
               ): String {
 
-                  val value =
-                      count.toDouble() * 100.0 / total
-
                   return String.format(
                       Locale.US,
                       "%.1f",
-                      value
+                      count.toDouble() *
+                          100.0 /
+                          total
                   )
               }
 
-              private fun format(value: Double): String {
+              private fun format(
+                  value: Double
+              ): String {
+
                   return String.format(
                       Locale.US,
                       "%.2f",
@@ -796,13 +1074,19 @@ jobs:
                   )
               }
 
-              private fun sha256(value: String): String {
+              private fun sha256(
+                  value: String
+              ): String {
 
                   val digest =
-                      MessageDigest.getInstance("SHA-256")
+                      MessageDigest.getInstance(
+                          "SHA-256"
+                      )
 
                   val bytes =
-                      digest.digest(value.toByteArray())
+                      digest.digest(
+                          value.toByteArray()
+                      )
 
                   return bytes.joinToString("") {
                       "%02x".format(it)
@@ -811,19 +1095,21 @@ jobs:
 
               private fun saveRounds() {
 
-                  val encoded =
-                      rounds.joinToString(",")
-
                   prefs.edit()
-                      .putString("rounds", encoded)
+                      .putString(
+                          "rounds",
+                          rounds.joinToString(",")
+                      )
                       .apply()
               }
 
               private fun loadRounds() {
 
                   val encoded =
-                      prefs.getString("rounds", "")
-                          ?: ""
+                      prefs.getString(
+                          "rounds",
+                          ""
+                      ) ?: ""
 
                   if (encoded.isEmpty()) {
                       return
@@ -834,7 +1120,8 @@ jobs:
                       val value =
                           it.toDoubleOrNull()
 
-                      if (value != null &&
+                      if (
+                          value != null &&
                           value >= 1.0
                       ) {
                           rounds.add(value)
